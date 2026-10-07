@@ -1,490 +1,881 @@
--- ============================================================================= --
--- AUTO QUEST MASTER CONTROLLER - FORCE CYCLE EDITION (2026)
--- ============================================================================= --
+--[=[
+	GiGis GUI + Auto Farm Completo (Corrigido)
+	- Abas fixas
+	- Lista de missões por nível
+	- Prompt + Diálogo funcionando
+]=]
+
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local camera = workspace.CurrentCamera
 local living = workspace:WaitForChild("Living")
 
---==================================================
--- CONFIGURAÇÕES PARAMETRIZADAS INTEGRADAS
---==================================================
-local CONFIG = {
-    NPC_NAME = "Officer Sam [Lvl. 1+]",
-    NPC_POS = Vector3.new(-474, 10, -777),
-    TWEEN_SPEED = 85,
-    SPAM_DELAY = 0.05,
-    
-    -- COORDENADAS ATUALIZADAS (Mesmo botão para Option1 e Avançar Diálogo)
-    CLICK_SCALE = Vector2.new(0.64592433, 0.660380185),
-    
-    COMBAT_NPC_NAME = "Thug",
-    DISTANCE_BEHIND = 3,
-    FLOAT_HEIGHT = 2,
-    PLAYER_BELOW = 17,
-    AUTOCLICK_INTERVAL = 0.12,
-    Q_INTERVAL = 0.25,
+-- Remove GUI antiga
+if playerGui:FindFirstChild("GiGisGui") then
+	playerGui.GiGisGui:Destroy()
+end
+
+-- ======================
+-- LISTA DE MISSÕES (ordem de nível)
+-- ======================
+local FARMS = {
+
+	-- Nível 1+
+	{
+		name = "Thug (Lvl 1+)",
+		npcName = "Officer Sam [Lvl. 1+]", -- ou o nome exato do NPC
+		npcPos = Vector3.new(-474, 10, -777), -- você coloca depois
+		combatNpc = "Thug",
+	},
+	-- Nível 10+
+	{
+		name = "Corrupt Police (Lvl 10+)",
+		npcName = "Deputy Bertrude", -- ajuste o nome se for diferente
+		npcPos = Vector3.new(-583, -26, -705),
+		combatNpc = "Corrupt Police", -- ou "Corrupt Police" se for o nome real
+	},
+	-- Nível 15+
+	{
+		name = "Alpha Thug (Lvl 15+)",
+		npcName = "Abbacchio's Partner", -- ajuste
+		npcPos = Vector3.new(-579, -26, -581),
+		combatNpc = "Alpha Thug",
+	},
+	-- Nível 20+
+	{
+		name = "Zombie Henchman (Lvl 20+)",
+		npcName = "Dracula",
+		npcPos = Vector3.new(-416, -33, -78),
+		combatNpc = "Zombie Henchman",
+	},
+	-- Nível 25+
+	{
+		name = "Vampire (Lvl 25+)",
+		npcName = "William Zeppeli", -- ou "Zeppeli"
+		npcPos = Vector3.new(-135, -31, 37),
+		combatNpc = "Vampire",
+	},
+	-- Nível 30+ (Boss)
+	{
+		name = "DIO Boss (Lvl 30+)",
+		npcName = "Doppio",
+		npcPos = Vector3.new(-40, 0, -988),
+		combatNpc = "DIO", -- ou o nome real do modelo do boss
+	},
+	-- Nível 35+ (Boss)
+	{
+		name = "Jotaro Boss (Lvl 35+)",
+		npcName = "DIO", -- o NPC que dá a quest
+		npcPos = Vector3.new(311, -26, 485),
+		combatNpc = "Jotaro", -- ou o nome real
+	},
+    {
+		name = "Heaven Ascension DIO (Lvl. 40+)",
+		npcName = "Jotaro (Heaven)", -- o NPC que dá a quest
+		npcPos = Vector3.new(8553, -479, 815),
+		combatNpc = "Heaven Ascension DIO", -- ou o nome real
+	},
 }
 
---==================================================
--- VARIÁVEIS DE ESTADO DO JOGO
---==================================================
+local CONFIG = {
+	TWEEN_SPEED = 300,
+	SPAM_DELAY = 0.035,
+	DISTANCE_BEHIND = 3,
+	FLOAT_HEIGHT = 2,
+	PLAYER_BELOW = 20,
+	AUTOCLICK_INTERVAL = 0.11,
+	Q_INTERVAL = 0.22,
+}
+
+-- ======================
+-- CRIAÇÃO DA GUI
+-- ======================
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "GiGisGui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = playerGui
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 687, 0, 496)
+MainFrame.Position = UDim2.new(0.25, 0, 0.19, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+MainFrame.BackgroundTransparency = 0.8
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
+
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 5)
+
+local UIStrokeMain = Instance.new("UIStroke")
+UIStrokeMain.Color = Color3.fromRGB(38, 255, 118)
+UIStrokeMain.Thickness = 2
+UIStrokeMain.Parent = MainFrame
+
+-- Título
+local TitleFrame = Instance.new("Frame")
+TitleFrame.Size = UDim2.new(0, 173, 0, 70)
+TitleFrame.BackgroundColor3 = Color3.fromRGB(84, 255, 110)
+TitleFrame.BorderSizePixel = 0
+TitleFrame.Parent = MainFrame
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, 0, 1, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "GiGis_."
+TitleLabel.TextColor3 = Color3.fromRGB(0, 0, 0)
+TitleLabel.TextScaled = true
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.Parent = TitleFrame
+
+-- Menu Lateral
+local SideFrame = Instance.new("Frame")
+SideFrame.Name = "SideFrame"
+SideFrame.Size = UDim2.new(0, 173, 0, 410)
+SideFrame.Position = UDim2.new(0, 0, 0, 75)
+SideFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+SideFrame.BorderSizePixel = 0
+SideFrame.Parent = MainFrame
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Padding = UDim.new(0, 10)
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Parent = SideFrame
+
+-- Área das Opções
+local OptionsFrame = Instance.new("Frame")
+OptionsFrame.Name = "OptionsFrame"
+OptionsFrame.Size = UDim2.new(0, 490, 0, 400)
+OptionsFrame.Position = UDim2.new(0, 185, 0, 80)
+OptionsFrame.BackgroundTransparency = 1
+OptionsFrame.Parent = MainFrame
+
+local tabs = {}
+
+local function createSideButton(name, order)
+	local btn = Instance.new("TextButton")
+	btn.Name = name
+	btn.Size = UDim2.new(1, 0, 0, 48)
+	btn.BackgroundColor3 = Color3.fromRGB(30, 31, 131)
+	btn.Text = name
+	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	btn.TextSize = 14
+	btn.Font = Enum.Font.Code
+	btn.LayoutOrder = order
+	btn.Parent = SideFrame
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(38, 255, 118)
+	stroke.Thickness = 2
+	stroke.Parent = btn
+
+	local tab = Instance.new("Frame")
+	tab.Name = name
+	tab.Size = UDim2.new(1, 0, 1, 0)
+	tab.BackgroundTransparency = 1
+	tab.Visible = false
+	tab.Parent = OptionsFrame
+
+	tabs[name] = tab
+	return btn
+end
+
+local btn1 = createSideButton("auto prestige_", 1)
+local btn2 = createSideButton("auto farm_", 2)
+local btn3 = createSideButton("auto farms_", 3)
+local btn4 = createSideButton("misc_", 4)
+local btn5 = createSideButton("credits_", 5)
+
+local function hideAllTabs()
+	for _, tab in pairs(tabs) do
+		tab.Visible = false
+	end
+end
+
+for _, btn in pairs({btn1, btn2, btn3, btn4, btn5}) do
+	btn.MouseButton1Click:Connect(function()
+		hideAllTabs()
+		if tabs[btn.Name] then
+			tabs[btn.Name].Visible = true
+		end
+	end)
+end
+
+-- ======================
+-- ABA AUTO FARM
+-- ======================
+local autoFarmTab = tabs["auto farm_"]
+
+local farmTitle = Instance.new("TextLabel")
+farmTitle.Size = UDim2.new(0, 300, 0, 35)
+farmTitle.Position = UDim2.new(0, 10, 0, 5)
+farmTitle.BackgroundTransparency = 1
+farmTitle.Text = "Auto Farm / Quest"
+farmTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+farmTitle.TextSize = 20
+farmTitle.Font = Enum.Font.GothamBold
+farmTitle.TextXAlignment = Enum.TextXAlignment.Left
+farmTitle.Parent = autoFarmTab
+
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(0, 460, 0, 22)
+statusLabel.Position = UDim2.new(0, 10, 0, 40)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = "Status: Aguardando"
+statusLabel.TextColor3 = Color3.fromRGB(180, 255, 180)
+statusLabel.TextSize = 14
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+statusLabel.Parent = autoFarmTab
+
+local listaContainer = Instance.new("ScrollingFrame")
+listaContainer.Size = UDim2.new(0, 460, 0, 220)
+listaContainer.Position = UDim2.new(0, 10, 0, 70)
+listaContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+listaContainer.BorderSizePixel = 0
+listaContainer.ScrollBarThickness = 4
+listaContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+listaContainer.Parent = autoFarmTab
+Instance.new("UICorner", listaContainer).CornerRadius = UDim.new(0, 6)
+
+local layoutLista = Instance.new("UIListLayout")
+layoutLista.Padding = UDim.new(0, 6)
+layoutLista.Parent = listaContainer
+
+local activateBtn = Instance.new("TextButton")
+activateBtn.Size = UDim2.new(0, 220, 0, 42)
+activateBtn.Position = UDim2.new(0, 10, 0, 305)
+activateBtn.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
+activateBtn.Text = "LIGAR BOT"
+activateBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+activateBtn.TextSize = 16
+activateBtn.Font = Enum.Font.GothamBold
+activateBtn.Parent = autoFarmTab
+Instance.new("UICorner", activateBtn).CornerRadius = UDim.new(0, 6)
+
+local strokeAct = Instance.new("UIStroke")
+strokeAct.Color = Color3.fromRGB(38, 255, 118)
+strokeAct.Thickness = 2
+strokeAct.Parent = activateBtn
+
+-- ======================
+-- VARIÁVEIS DE ESTADO
+-- ======================
 local isRunning = false
 local currentStatus = "Aguardando"
 local combatEnabled = false
 local currentNPC = nil
 local autoClickRunning = false
 local qLoopRunning = false
-local missaoSelecionada = false
+local selectedFarm = nil
+local missionButtons = {}
 
---==================================================
--- INTERFACE GRÁFICA (GUI) - DESIGN ATUALIZADO
---==================================================
-local gui = Instance.new("ScreenGui")
-gui.Name = "MasterUnifiedFarmGui"
-gui.ResetOnSpawn = false
-gui.Parent = playerGui
+-- Criar botões da lista
+for i, farm in ipairs(FARMS) do
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(1, -10, 0, 32)
+	btn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+	btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+	btn.Text = farm.name
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 14
+	btn.Parent = listaContainer
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
 
-local main = Instance.new("Frame")
-main.Name = "Main"
-main.Size = UDim2.new(0, 300, 0, 190) -- Tamanho do design solicitado
-main.Position = UDim2.new(0.5, -150, 0.5, -95) -- Centralização correspondente
-main.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
-main.BorderSizePixel = 0
-main.Parent = gui
+	missionButtons[i] = btn
 
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 12)
-corner.Parent = main
-
-local stroke = Instance.new("UIStroke")
-stroke.Color = Color3.fromRGB(70, 70, 85)
-stroke.Thickness = 1
-stroke.Parent = main
-
--- Título do Script (Área para arrastar / Status Dinâmico)
-local titulo = Instance.new("TextLabel")
-titulo.Size = UDim2.new(1, 0, 0, 30)
-titulo.Position = UDim2.new(0, 0, 0, 5)
-titulo.BackgroundTransparency = 1
-titulo.Text = "Status: Aguardando"
-titulo.TextColor3 = Color3.fromRGB(255, 255, 255)
-titulo.TextSize = 14
-titulo.Font = Enum.Font.SourceSansBold
-titulo.Parent = main
-
--- LISTA DE MISSÕES
-local listaContainer = Instance.new("ScrollingFrame")
-listaContainer.Size = UDim2.new(0, 260, 0, 85)
-listaContainer.Position = UDim2.new(0.5, -130, 0, 40)
-listaContainer.BackgroundColor3 = Color3.fromRGB(32, 32, 40)
-listaContainer.BorderSizePixel = 0
-listaContainer.ScrollBarThickness = 2
-listaContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
-local layoutLista = Instance.new("UIListLayout", listaContainer)
-layoutLista.Padding = UDim.new(0, 4)
-Instance.new("UICorner", listaContainer).CornerRadius = UDim.new(0, 6)
-listaContainer.Parent = main
-
--- Criar Botão da única Missão: Thug Lvl. 1
-local btnMissao = Instance.new("TextButton")
-btnMissao.Size = UDim2.new(1, 0, 0, 26)
-btnMissao.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-btnMissao.TextColor3 = Color3.fromRGB(200, 200, 200)
-btnMissao.Text = "Thug Lvl. 1"
-btnMissao.Font = Enum.Font.SourceSansBold
-btnMissao.TextSize = 13
-Instance.new("UICorner", btnMissao).CornerRadius = UDim.new(0, 4)
-btnMissao.Parent = listaContainer
-listaContainer.CanvasSize = UDim2.new(0, 0, 0, layoutLista.AbsoluteContentSize.Y)
-
-btnMissao.MouseButton1Click:Connect(function()
-    missaoSelecionada = not missaoSelecionada
-    if missaoSelecionada then
-        btnMissao.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-        btnMissao.TextColor3 = Color3.fromRGB(255, 255, 255)
-    else
-        btnMissao.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-        btnMissao.TextColor3 = Color3.fromRGB(200, 200, 200)
-    end
-end)
-
--- BOTÃO DE LIGAR / DESLIGAR ATIVAÇÃO (Botão Unificado)
-local btnFarm = Instance.new("TextButton")
-btnFarm.Size = UDim2.new(0, 260, 0, 36)
-btnFarm.Position = UDim2.new(0.5, -130, 0, 138)
-btnFarm.BackgroundColor3 = Color3.fromRGB(46, 204, 113) -- Verde Inicial
-btnFarm.TextColor3 = Color3.fromRGB(255, 255, 255)
-btnFarm.Text = "LIGAR BOT"
-btnFarm.Font = Enum.Font.SourceSansBold
-btnFarm.TextSize = 15
-Instance.new("UICorner", btnFarm).CornerRadius = UDim.new(0, 6)
-btnFarm.Parent = main
-
--- LÓGICA DE SISTEMA DRAGGABLE (Arrastar Janela Fluidamente)
-local dragging, dragInput, dragStart, startPos
-local function update(input)
-    local delta = input.Position - dragStart
-    main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	btn.MouseButton1Click:Connect(function()
+		for _, b in pairs(missionButtons) do
+			b.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+			b.TextColor3 = Color3.fromRGB(200, 200, 200)
+		end
+		btn.BackgroundColor3 = Color3.fromRGB(50, 90, 60)
+		btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		selectedFarm = farm
+	end)
 end
 
-main.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = main.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then dragging = false end
-        end)
-    end
-end)
+listaContainer.CanvasSize = UDim2.new(0, 0, 0, layoutLista.AbsoluteContentSize.Y + 10)
 
-main.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then update(input) end
-end)
-
---==================================================
--- FUNÇÕES DE LEITURA EXATA
---==================================================
+-- ======================
+-- FUNÇÕES AUXILIARES
+-- ======================
 local function getCharacterElements()
-    local char = player.Character
-    if not char then return nil, nil, nil end
-    return char, char:FindFirstChild("Humanoid"), char:FindFirstChild("HumanoidRootPart")
+	local char = player.Character
+	if not char then return nil, nil, nil end
+	return char, char:FindFirstChild("Humanoid"), char:FindFirstChild("HumanoidRootPart")
 end
 
 local function getStandMorph()
-    local playerModel = living:FindFirstChild(player.Name)
-    return playerModel and playerModel:FindFirstChild("StandMorph")
+	local playerModel = living:FindFirstChild(player.Name)
+	return playerModel and playerModel:FindFirstChild("StandMorph")
 end
 
 local function getNPCHealth(npc)
-    if not npc then return nil end
-    local health = npc:FindFirstChild("Health")
-    return (health and health:IsA("DoubleConstrainedValue")) and health or nil
+	if not npc then return nil end
+	local health = npc:FindFirstChild("Health")
+	return (health and health:IsA("DoubleConstrainedValue")) and health or nil
 end
 
 local function getNPCHRP(npc)
-    if not npc then return nil end
-    return npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Torso") or npc:FindFirstChild("UpperTorso")
+	if not npc then return nil end
+	return npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Torso") or npc:FindFirstChild("UpperTorso")
 end
 
 local function isDialogueGuiActive()
-    return playerGui:FindFirstChild("DialogueGui") ~= nil or playerGui:FindFirstChild("Dialogue") ~= nil
+	return playerGui:FindFirstChild("DialogueGui") ~= nil or playerGui:FindFirstChild("Dialogue") ~= nil
 end
 
 local function getQuestData()
-    local stats = player:FindFirstChild("PlayerStats")
-    if not stats then return "", 0, 0 end
-    local quest = stats:FindFirstChild("Quest")
-    local progress = stats:FindFirstChild("QuestProgress")
-    local maxProgress = stats:FindFirstChild("QuestMaxProgress")
-    
-    local questValue = quest and quest.Value or ""
-    local progressValue = progress and progress.Value or 0
-    local maxProgressValue = maxProgress and maxProgress.Value or 0
-    
-    if questValue == "/" or string.gsub(questValue, " ", "") == "" then
-        questValue = ""
-    end
-    return questValue, progressValue, maxProgressValue
+	local stats = player:FindFirstChild("PlayerStats")
+	if not stats then return "", 0, 0 end
+	local quest = stats:FindFirstChild("Quest")
+	local progress = stats:FindFirstChild("QuestProgress")
+	local maxProgress = stats:FindFirstChild("QuestMaxProgress")
+	
+	local questValue = quest and quest.Value or ""
+	local progressValue = progress and progress.Value or 0
+	local maxProgressValue = maxProgress and maxProgress.Value or 0
+	
+	if questValue == "/" or string.gsub(questValue, " ", "") == "" then
+		questValue = ""
+	end
+	return questValue, progressValue, maxProgressValue
 end
 
 local function fastWait(condition, timeout)
-    local start = os.clock()
-    while os.clock() - start < timeout do
-        if not isRunning then return false end
-        local success, result = pcall(condition)
-        if success and result then return true end
-        task.wait(0.1)
-    end
-    return false
+	local start = os.clock()
+	while os.clock() - start < timeout do
+		if not isRunning then return false end
+		local success, result = pcall(condition)
+		if success and result then return true end
+		task.wait(0.08)
+	end
+	return false
 end
 
---==================================================
--- ENTRADAS VIRTUAIS DO COMBATE
---==================================================
+-- ======================
+-- COMBATE
+-- ======================
 local function sendClick()
-    VirtualInputManager:SendMouseButtonEvent(1, 1, 0, true, game, 0)
-    task.wait(0.04)
-    VirtualInputManager:SendMouseButtonEvent(1, 1, 0, false, game, 0)
+	VirtualInputManager:SendMouseButtonEvent(1, 1, 0, true, game, 0)
+	task.wait(0.035)
+	VirtualInputManager:SendMouseButtonEvent(1, 1, 0, false, game, 0)
 end
 
 local function startAutoClick()
-    if autoClickRunning then return end
-    autoClickRunning = true
-    task.spawn(function()
-        while autoClickRunning and combatEnabled and isRunning do
-            pcall(sendClick)
-            task.wait(CONFIG.AUTOCLICK_INTERVAL)
-        end
-        autoClickRunning = false
-    end)
+	if autoClickRunning then return end
+	autoClickRunning = true
+	task.spawn(function()
+		while autoClickRunning and combatEnabled and isRunning do
+			pcall(sendClick)
+			task.wait(CONFIG.AUTOCLICK_INTERVAL)
+		end
+		autoClickRunning = false
+	end)
 end
 
 local function startQLoop()
-    if qLoopRunning then return end
-    qLoopRunning = true
-    task.spawn(function()
-        while combatEnabled and qLoopRunning and isRunning do
-            if getStandMorph() then break end
-            pcall(function() VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Q, false, game) end)
-            task.wait(0.04)
-            pcall(function() VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Q, false, game) end)
-            task.wait(CONFIG.Q_INTERVAL)
-        end
-        qLoopRunning = false
-    end)
+	if qLoopRunning then return end
+	qLoopRunning = true
+	task.spawn(function()
+		while combatEnabled and qLoopRunning and isRunning do
+			if getStandMorph() then break end
+			pcall(function()
+				VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Q, false, game)
+			end)
+			task.wait(0.04)
+			pcall(function()
+				VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Q, false, game)
+			end)
+			task.wait(CONFIG.Q_INTERVAL)
+		end
+		qLoopRunning = false
+	end)
 end
 
 local function returnStandToPlayer()
-    currentNPC = nil
-    local stand = getStandMorph()
-    local _, humanoid, hrp = getCharacterElements()
-    if stand and hrp and hrp.Parent then
-        stand:PivotTo(hrp.CFrame * CFrame.new(0, 0, 3))
-    end
-    if humanoid then camera.CameraSubject = humanoid end
+	currentNPC = nil
+	local stand = getStandMorph()
+	local _, humanoid, hrp = getCharacterElements()
+	if stand and hrp and hrp.Parent then
+		stand:PivotTo(hrp.CFrame * CFrame.new(0, 0, 3))
+	end
+	if humanoid then camera.CameraSubject = humanoid end
 end
 
 local function setCombatState(wantEnabled)
-    if wantEnabled then
-        local _, humanoid, _ = getCharacterElements()
-        if not humanoid or humanoid.Health <= 0 then return end
-        combatEnabled = true
-        currentNPC = nil
-        startAutoClick()
-        if not getStandMorph() then startQLoop() end
-    else
-        combatEnabled = false
-        autoClickRunning = false
-        qLoopRunning = false
-        returnStandToPlayer()
-    end
+	if wantEnabled then
+		local _, humanoid = getCharacterElements()
+		if not humanoid or humanoid.Health <= 0 then return end
+		combatEnabled = true
+		currentNPC = nil
+		startAutoClick()
+		if not getStandMorph() then startQLoop() end
+	else
+		combatEnabled = false
+		autoClickRunning = false
+		qLoopRunning = false
+		returnStandToPlayer()
+	end
 end
 
 local function findTargetNPC()
-    for _, npc in ipairs(living:GetChildren()) do
-        if npc:IsA("Model") and npc.Name == CONFIG.COMBAT_NPC_NAME then
-            local health = getNPCHealth(npc)
-local root = getNPCHRP(npc)
-if health and health.Value > 0 and root then
-return npc
+	if not selectedFarm then return nil end
+	for _, npc in ipairs(living:GetChildren()) do
+		if npc:IsA("Model") and npc.Name == selectedFarm.combatNpc then
+			local health = getNPCHealth(npc)
+			local root = getNPCHRP(npc)
+			if health and health.Value > 0 and root then
+				return npc
+			end
+		end
+	end
+	return nil
 end
-end
-end
-return nil
-end
---==================================================
--- MOTOR DE ATUALIZAÇÃO DE COMBATE (HEARTBEAT)
---==================================================
+
 RunService.Heartbeat:Connect(function()
-if not combatEnabled or not isRunning then return end
-local _, humanoid, hrp = getCharacterElements()
-if not humanoid or humanoid.Health <= 0 or not hrp or not hrp.Parent then
-setCombatState(false)
-return
-end
-local stand = getStandMorph()
-if not stand then
-currentNPC = nil
-startQLoop()
-return
-end
-qLoopRunning = false
-if currentNPC then
-local health = getNPCHealth(currentNPC)
-local npcHrp = getNPCHRP(currentNPC)
-if not health or health.Value <= 0 or not npcHrp or not npcHrp.Parent then
-currentNPC = nil
-end
-end
-if not currentNPC then
-currentNPC = findTargetNPC()
-if not currentNPC then
-returnStandToPlayer()
-return
-end
-end
-local npcHrp = getNPCHRP(currentNPC)
-if npcHrp then
-local npcHumanoid = currentNPC:FindFirstChildOfClass("Humanoid")
-if npcHumanoid then camera.CameraSubject = npcHumanoid end
-local standTargetCFrame = npcHrp.CFrame * CFrame.new(0, CONFIG.FLOAT_HEIGHT, CONFIG.DISTANCE_BEHIND)
-stand:PivotTo(standTargetCFrame)
-local playerTargetCFrame = npcHrp.CFrame * CFrame.new(0, -CONFIG.PLAYER_BELOW, 0)
-pcall(function()
-hrp.AssemblyLinearVelocity = Vector3.zero
-hrp.AssemblyAngularVelocity = Vector3.zero
-hrp.CFrame = playerTargetCFrame
+	if not combatEnabled or not isRunning then return end
+	local _, humanoid, hrp = getCharacterElements()
+	if not humanoid or humanoid.Health <= 0 or not hrp then
+		setCombatState(false)
+		return
+	end
+
+	local stand = getStandMorph()
+	if not stand then
+		currentNPC = nil
+		startQLoop()
+		return
+	end
+	qLoopRunning = false
+
+	if currentNPC then
+		local health = getNPCHealth(currentNPC)
+		local npcHrp = getNPCHRP(currentNPC)
+		if not health or health.Value <= 0 or not npcHrp then
+			currentNPC = nil
+		end
+	end
+
+	if not currentNPC then
+		currentNPC = findTargetNPC()
+		if not currentNPC then
+			returnStandToPlayer()
+			return
+		end
+	end
+
+	local npcHrp = getNPCHRP(currentNPC)
+	if npcHrp then
+		local npcHumanoid = currentNPC:FindFirstChildOfClass("Humanoid")
+		if npcHumanoid then camera.CameraSubject = npcHumanoid end
+
+		local standTarget = npcHrp.CFrame * CFrame.new(0, CONFIG.FLOAT_HEIGHT, CONFIG.DISTANCE_BEHIND)
+		stand:PivotTo(standTarget)
+
+		local playerTarget = npcHrp.CFrame * CFrame.new(0, -CONFIG.PLAYER_BELOW, 0)
+		pcall(function()
+			hrp.AssemblyLinearVelocity = Vector3.zero
+			hrp.AssemblyAngularVelocity = Vector3.zero
+			hrp.CFrame = playerTarget
+		end)
+	end
 end)
+
+-- ======================
+-- FUNÇÕES DE QUEST (CORRIGIDAS)
+-- ======================
+local function simularCliqueEscala(pos)
+	local screenSize = camera.ViewportSize
+	local x = pos.X * screenSize.X
+	local y = pos.Y * screenSize.Y
+	VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 0)
+	task.wait(0.02)
+	VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 0)
 end
-end)
---==================================================
--- ROTA DE CRIAÇÃO E DIÁLOGOS
---==================================================
-local function simularCliqueEscala(coordenadasEscala)
-local screenSize = camera.ViewportSize
-local pixelX = coordenadasEscala.X * screenSize.X
-local pixelY = coordenadasEscala.Y * screenSize.Y
-VirtualInputManager:SendMouseButtonEvent(pixelX, pixelY, 0, true, game, 0)
-task.wait(0.01)
-VirtualInputManager:SendMouseButtonEvent(pixelX, pixelY, 0, false, game, 0)
-end
+
 local function walkToNPC()
-currentStatus = "Teleportando pro NPC"
-setCombatState(false)
-local _, _, root = getCharacterElements()
-if not root then return false end
-pcall(function() root.Anchored = false end)
-local distance = (root.Position - CONFIG.NPC_POS).Magnitude
-if distance <= 5 then return true end
-local duration = distance / CONFIG.TWEEN_SPEED
-pcall(function()
-root.AssemblyLinearVelocity = Vector3.zero
-root.AssemblyAngularVelocity = Vector3.zero
-end)
-local tween = TweenService:Create(root, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
-CFrame = CFrame.new(CONFIG.NPC_POS + Vector3.new(0, 1.5, 0))
-})
-local finished = false
-local connection = tween.Completed:Connect(function() finished = true end)
-tween:Play()
-local success = fastWait(function() return finished end, duration + 2)
-connection:Disconnect()
-if not success then
-tween:Cancel()
-return false
+	if not selectedFarm then return false end
+	currentStatus = "Indo até o NPC..."
+	setCombatState(false)
+
+	local _, _, root = getCharacterElements()
+	if not root then return false end
+
+	pcall(function()
+		root.Anchored = false
+		root.AssemblyLinearVelocity = Vector3.zero
+		root.AssemblyAngularVelocity = Vector3.zero
+	end)
+
+	local targetPos = selectedFarm.npcPos + Vector3.new(0, 2.5, 0)
+	local distance = (root.Position - targetPos).Magnitude
+
+	-- Já está perto o suficiente
+	if distance <= 6 then
+		return true
+	end
+
+	-- Velocidade constante (studs por segundo)
+	local SPEED = 95
+	local duration = distance / SPEED
+
+	-- Limita pra não ficar ridiculamente longo ou curto
+	duration = math.clamp(duration, 0.6, 9)
+
+	local tweenInfo = TweenInfo.new(
+		duration,
+		Enum.EasingStyle.Linear,   -- velocidade constante
+		Enum.EasingDirection.Out,
+		0,
+		false,
+		0
+	)
+
+	local tween = TweenService:Create(root, tweenInfo, {
+		CFrame = CFrame.new(targetPos)
+	})
+
+	local finished = false
+	local connection = tween.Completed:Connect(function()
+		finished = true
+	end)
+
+	tween:Play()
+
+	local success = fastWait(function()
+		return finished or (root.Position - targetPos).Magnitude <= 5
+	end, duration + 1.5)
+
+	connection:Disconnect()
+
+	if not success then
+		tween:Cancel()
+		-- Força a posição final se falhar
+		pcall(function()
+			root.CFrame = CFrame.new(targetPos)
+		end)
+	end
+
+	task.wait(0.25)
+	return true
 end
-pcall(function() root.Anchored = true end)
-task.wait(0.2)
-pcall(function() root.Anchored = false end)
-return true
-end
+
 local function triggerPrompt()
-currentStatus = "Pressionando E"
-local folder = workspace:FindFirstChild("Dialogues")
-local npc = folder and folder:FindFirstChild(CONFIG.NPC_NAME)
-local prompt = npc and npc:FindFirstChildOfClass("ProximityPrompt")
-if not prompt then return false end
-prompt.RequiresLineOfSight = false
-local ok = pcall(function() fireproximityprompt(prompt) end)
-if not ok then
-pcall(function()
-prompt:InputHoldBegin()
-task.wait(prompt.HoldDuration + 0.02)
-prompt:InputHoldEnd()
-end)
+	if not selectedFarm then return false end
+	currentStatus = "Ativando Prompt (E)"
+
+	local folder = workspace:FindFirstChild("Dialogues")
+	if not folder then 
+		warn("[AutoFarm] Pasta Dialogues não encontrada")
+		return false 
+	end
+
+	local npc = folder:FindFirstChild(selectedFarm.npcName)
+	if not npc then
+		-- tenta achar por nome parcial
+		for _, v in ipairs(folder:GetChildren()) do
+			if string.find(string.lower(v.Name), string.lower(selectedFarm.npcName)) then
+				npc = v
+				break
+			end
+		end
+	end
+
+	if not npc then
+		warn("[AutoFarm] NPC não encontrado: " .. selectedFarm.npcName)
+		return false
+	end
+
+	local prompt = npc:FindFirstChildOfClass("ProximityPrompt")
+	if not prompt then
+		warn("[AutoFarm] ProximityPrompt não encontrado")
+		return false
+	end
+
+	prompt.RequiresLineOfSight = false
+	prompt.MaxActivationDistance = 20
+
+	-- Método 1: fireproximityprompt
+	local success = pcall(function()
+		fireproximityprompt(prompt)
+	end)
+
+	-- Método 2: Hold manual (mais confiável)
+	if not success then
+		pcall(function()
+			prompt:InputHoldBegin()
+			task.wait(prompt.HoldDuration + 0.15)
+			prompt:InputHoldEnd()
+		end)
+	end
+
+	-- Método 3: Pressionar E virtual
+	task.wait(0.1)
+	pcall(function()
+		VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+		task.wait(0.12)
+		VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+	end)
+
+	task.wait(0.6)
+	return true
 end
-task.wait(0.5)
-return true
-end
+
 local function clearAllDialogues()
-currentStatus = "Spamando Cliques"
-local menuApareceu = fastWait(function() return isDialogueGuiActive() end, 3)
-if not menuApareceu then return false end
-while isRunning and isDialogueGuiActive() do
-pcall(function() simularCliqueEscala(CONFIG.CLICK_SCALE) end)
-task.wait(CONFIG.SPAM_DELAY)
+	currentStatus = "Spamando Cliques do Diálogo"
+
+	local apareceu = fastWait(function() return isDialogueGuiActive() end, 4)
+	if not apareceu then
+		warn("[AutoFarm] Diálogo não apareceu")
+		return false
+	end
+
+	-- Várias posições possíveis de botão
+	local positions = {
+		Vector2.new(0.50, 0.72),
+		Vector2.new(0.50, 0.68),
+		Vector2.new(0.50, 0.76),
+		Vector2.new(0.6459, 0.6604),
+		Vector2.new(0.62, 0.70),
+		Vector2.new(0.38, 0.70),
+		Vector2.new(0.50, 0.80),
+		Vector2.new(0.50, 0.64),
+	}
+
+	local start = os.clock()
+	while isRunning and isDialogueGuiActive() and (os.clock() - start) < 9 do
+		for _, pos in ipairs(positions) do
+			if not isDialogueGuiActive() then break end
+			pcall(simularCliqueEscala, pos)
+			task.wait(0.035)
+		end
+		task.wait(0.06)
+	end
+
+	task.wait(0.4)
+	return true
 end
-task.wait(0.4)
-return true
-end
+
 local function executeHuntingFarming()
-currentStatus = "Matando Thugs (KNPC)"
-setCombatState(true)
-task.wait(1.0)
-while isRunning do
-local questName, currentProgress, maxProgress = getQuestData()
-if questName == "" then
-print("[AutoFarm] Ciclo de caça finalizado com sucesso!")
-break
+	currentStatus = "Farmando: " .. (selectedFarm and selectedFarm.combatNpc or "mobs")
+	setCombatState(true)
+	task.wait(1.5)
+
+	local lastProgress = -1
+	local completedChecks = 0
+	local stuckTime = 0
+	local requiredCompletedChecks = 3
+
+	while isRunning do
+		local questName, currentProgress, maxProgress = getQuestData()
+
+		-- Atualiza status
+		if maxProgress > 0 then
+			currentStatus = string.format("Farmando: %s (%d/%d)", selectedFarm.combatNpc, currentProgress, maxProgress)
+		else
+			currentStatus = "Farmando: " .. (selectedFarm.combatNpc or "mobs")
+		end
+
+		-- ===== VERIFICAÇÃO DE VIDA DO MOB/BOSS =====
+		local targetAlive = false
+		for _, npc in ipairs(living:GetChildren()) do
+			if npc:IsA("Model") and npc.Name == selectedFarm.combatNpc then
+				local health = getNPCHealth(npc)
+				if health and health.Value > 0 then
+					targetAlive = true
+					break
+				end
+			end
+		end
+
+		-- Condições para considerar a missão terminada
+		local isCompleted = false
+
+		-- 1. Progresso da quest completou
+		if maxProgress > 0 and currentProgress >= maxProgress then
+			isCompleted = true
+		end
+
+		-- 2. Quest sumiu e já tinha progresso
+		if questName == "" and lastProgress > 0 then
+			isCompleted = true
+		end
+
+		-- 3. Nenhum mob/boss vivo + já matou pelo menos 1
+		if not targetAlive and lastProgress > 0 then
+			isCompleted = true
+		end
+
+		if isCompleted then
+			completedChecks = completedChecks + 1
+			if completedChecks >= requiredCompletedChecks then
+				print("[AutoFarm] Missão concluída! Voltando pro NPC...")
+				break
+			end
+		else
+			completedChecks = 0
+		end
+
+		-- Proteção de travamento
+		if currentProgress == lastProgress and currentProgress > 0 then
+			stuckTime = stuckTime + 0.7
+			if stuckTime > 40 then
+				warn("[AutoFarm] Progresso travado, reiniciando...")
+				break
+			end
+		else
+			stuckTime = 0
+			lastProgress = currentProgress
+		end
+
+		task.wait(0.7)
+	end
+
+	setCombatState(false)
+	task.wait(1.2)
+	return true
 end
-print(string.format("[Progresso] %s: %d / %d", questName, currentProgress, maxProgress))
-task.wait(0.5)
-end
-setCombatState(false)
-return true
-end
--- ============================================================================= --
--- GERENCIADOR DE REPETIÇÃO FORÇADA
--- ============================================================================= --
+
+-- ======================
+-- CICLO PRINCIPAL
+-- ======================
 local function runMasterFarmCycle()
-print("[AutoFarm] Iniciando nova rota obrigatória completa...")
-local steps = { walkToNPC, triggerPrompt, clearAllDialogues, executeHuntingFarming }
-for _, step in ipairs(steps) do
-if not isRunning then return end
-local success = step()
-if not success then
-warn("[Sistema] Quebra na sequência detectada. Reiniciando ciclo de segurança...")
-setCombatState(false)
-pcall(function()
-local _, _, root = getCharacterElements()
-if root then root.Anchored = false end
-end)
-task.wait(2)
-return
+	print("[AutoFarm] Iniciando ciclo da missão:", selectedFarm and selectedFarm.name)
+
+	local steps = {
+		walkToNPC,
+		triggerPrompt,
+		clearAllDialogues,
+		executeHuntingFarming
+	}
+
+	for _, step in ipairs(steps) do
+		if not isRunning then return end
+		local ok = step()
+		if not ok then
+			warn("[AutoFarm] Falha em uma etapa. Reiniciando ciclo...")
+			setCombatState(false)
+			task.wait(2)
+			return
+		end
+	end
 end
-end
-end
+
 local function startBot()
-if isRunning then return end
-isRunning = true
-task.spawn(function()
-while isRunning do
-runMasterFarmCycle()
-task.wait(1.0)
+	if isRunning or not selectedFarm then return end
+	isRunning = true
+	task.spawn(function()
+		while isRunning do
+			runMasterFarmCycle()
+			task.wait(1.2)
+		end
+		currentStatus = "Aguardando"
+	end)
 end
-currentStatus = "Aguardando"
-end)
-end
+
 local function stopBot()
-isRunning = false
-setCombatState(false)
-pcall(function()
-local _, _, root = getCharacterElements()
-if root then root.Anchored = false end
-end)
+	isRunning = false
+	setCombatState(false)
+	pcall(function()
+		local _, _, root = getCharacterElements()
+		if root then root.Anchored = false end
+	end)
 end
-player.CharacterAdded:Connect(function()
-setCombatState(false)
-task.wait(0.5)
-end)
--- Loop de Atualização do Status na Janela Principal
+
+-- Atualiza status
 task.spawn(function()
-while main.Parent do
-titulo.Text = "Status: " .. currentStatus
-task.wait(0.2)
-end
+	while ScreenGui.Parent do
+		statusLabel.Text = "Status: " .. currentStatus
+		task.wait(0.2)
+	end
 end)
---==================================================
--- VÍNCULO DO BOTÃO ALTERNADOR DA JANELE
---==================================================
-btnFarm.MouseButton1Click:Connect(function()
-if not missaoSelecionada then
-btnFarm.Text = "Selecione a missão primeiro!"
-task.wait(1.5)
-btnFarm.Text = isRunning and "DESLIGAR BOT" or "LIGAR BOT"
-return
-end
-if isRunning then
-stopBot()
-btnFarm.Text = "LIGAR BOT"
-btnFarm.BackgroundColor3 = Color3.fromRGB(46, 204, 113) -- Verde
-else
-startBot()
-btnFarm.Text = "DESLIGAR BOT"
-btnFarm.BackgroundColor3 = Color3.fromRGB(231, 76, 60) -- Vermelho
-end
+
+-- Botão Ligar/Desligar
+activateBtn.MouseButton1Click:Connect(function()
+	if not selectedFarm then
+		activateBtn.Text = "Selecione uma missão!"
+		task.wait(1.4)
+		activateBtn.Text = isRunning and "DESLIGAR BOT" or "LIGAR BOT"
+		return
+	end
+
+	if isRunning then
+		stopBot()
+		activateBtn.Text = "LIGAR BOT"
+		activateBtn.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
+	else
+		startBot()
+		activateBtn.Text = "DESLIGAR BOT"
+		activateBtn.BackgroundColor3 = Color3.fromRGB(231, 76, 60)
+	end
 end)
+
+player.CharacterAdded:Connect(function()
+	setCombatState(false)
+	task.wait(0.6)
+end)
+
+-- ======================
+-- MINIMIZAR + ARRASTAR
+-- ======================
+local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Size = UDim2.new(0, 34, 0, 34)
+minimizeBtn.Position = UDim2.new(1, -42, 0, 8)
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(30, 31, 131)
+minimizeBtn.Text = "-"
+minimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeBtn.TextSize = 22
+minimizeBtn.Font = Enum.Font.GothamBold
+minimizeBtn.Parent = MainFrame
+Instance.new("UICorner", minimizeBtn).CornerRadius = UDim.new(0, 6)
+
+local isMinimized = false
+local originalSize = MainFrame.Size
+
+minimizeBtn.MouseButton1Click:Connect(function()
+	if not isMinimized then
+		MainFrame:TweenSize(UDim2.new(0, 180, 0, 50), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25, true)
+		minimizeBtn.Text = "+"
+		SideFrame.Visible = false
+		TitleFrame.Visible = false
+		OptionsFrame.Visible = false
+	else
+		MainFrame:TweenSize(originalSize, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25, true)
+		minimizeBtn.Text = "-"
+		SideFrame.Visible = true
+		TitleFrame.Visible = true
+		OptionsFrame.Visible = true
+	end
+	isMinimized = not isMinimized
+end)
+
+local dragging, dragStart, startPos
+MainFrame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = MainFrame.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - dragStart
+		MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+end)
+
+print("✅ GiGis + Auto Farm carregado e corrigido!")
