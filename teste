@@ -74,7 +74,7 @@ local FARMS = {
 	{
 		name = "Heaven Ascension DIO (Lvl. 40+)",
 		npcName = "Jotaro (Heaven)",
-		npcPos = Vector3.new(8553, -479, 815),
+		npcPos = Vector3.new(8553, -479, 8154),
 		combatNpc = "Heaven Ascension DIO",
 		killsNeeded = 1,
 	},
