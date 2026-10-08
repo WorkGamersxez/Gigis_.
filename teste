@@ -73,14 +73,21 @@ local FARMS = {
 	{
 		name = "Heaven Ascension DIO (Lvl. 40+)",
 		npcName = "Jotaro (Heaven)",
-		npcPos = Vector3.new(8553, -479, 8154),
+		npcPos = Vector3.new(-241, 274, 293),
 		combatNpc = "Heaven Ascension DIO",
 		killsNeeded = 1,
 	},
+ 	{
+		name = "Jotaro Kujo",
+		npcName = "NGM",
+		npcPos = Vector3.new(-241, 274, 293),
+		combatNpc = "Jotaro Kujo",
+		killsNeeded = 1,
+	},   
 }
 
 local CONFIG = {
-	SPEED = 3000,
+	SPEED = 1000,
 	DISTANCE_BEHIND = 3,
 	FLOAT_HEIGHT = 2,
 	PLAYER_BELOW = 25,
@@ -485,6 +492,9 @@ local function findTargetNPC()
 	return nil
 end
 
+-- ====================================================
+-- CORREÇÃO DO LOOP DE COMBATE (HEARTBEAT)
+-- ====================================================
 RunService.Heartbeat:Connect(function()
 	if not combatEnabled or not isRunning then return end
 
@@ -507,18 +517,22 @@ RunService.Heartbeat:Connect(function()
 
 	qLoopRunning = false
 
+	-- Se o NPC atual sumir ou morrer, desativa o combate IMEDIATAMENTE
 	if currentNPC then
 		local health = getNPCHealth(currentNPC)
 		local npcHrp = getNPCHRP(currentNPC)
 		if not health or health.Value <= 0 or not npcHrp then
+			print("[Heartbeat] NPC morreu! Desligando cliques.")
 			currentNPC = nil
+			setCombatState(false) -- 🟢 Para o clique aqui antes que o próximo loop rode
+			return
 		end
 	end
 
 	if not currentNPC then
 		currentNPC = findTargetNPC()
 		if not currentNPC then
-			returnStandToPlayer()
+			setCombatState(false) -- 🟢 Se não achou nenhum outro NPC, garante que o clique pare
 			return
 		end
 	end
@@ -541,6 +555,7 @@ RunService.Heartbeat:Connect(function()
 		end)
 	end
 end)
+
 
 -- ======================
 -- MOVIMENTO (Noclip + AntiFall)
