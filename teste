@@ -1,8 +1,5 @@
 --[=[
-	GiGis GUI + Auto Farm Completo (Corrigido)
-	- Abas fixas
-	- Lista de missões por nível
-	- Prompt + Diálogo funcionando
+	GiGis Auto Farm - Versão Refeita
 ]=]
 
 local Players = game:GetService("Players")
@@ -22,79 +19,72 @@ if playerGui:FindFirstChild("GiGisGui") then
 end
 
 -- ======================
--- LISTA DE MISSÕES (ordem de nível)
+-- LISTA DE MISSÕES
 -- ======================
 local FARMS = {
-
-	-- Nível 1+
 	{
 		name = "Thug (Lvl 1+)",
-		npcName = "Officer Sam [Lvl. 1+]", -- ou o nome exato do NPC
-		npcPos = Vector3.new(-474, 10, -777), -- você coloca depois
+		npcName = "Officer Sam [Lvl. 1+]",
+		npcPos = Vector3.new(-474, 10, -777),
 		combatNpc = "Thug",
 	},
-	-- Nível 10+
 	{
 		name = "Corrupt Police (Lvl 10+)",
-		npcName = "Deputy Bertrude", -- ajuste o nome se for diferente
+		npcName = "Deputy Bertrude",
 		npcPos = Vector3.new(-583, -26, -705),
-		combatNpc = "Corrupt Police", -- ou "Corrupt Police" se for o nome real
+		combatNpc = "Corrupt Police",
 	},
-	-- Nível 15+
 	{
 		name = "Alpha Thug (Lvl 15+)",
-		npcName = "Abbacchio's Partner", -- ajuste
+		npcName = "Abbacchio's Partner",
 		npcPos = Vector3.new(-579, -26, -581),
 		combatNpc = "Alpha Thug",
 	},
-	-- Nível 20+
 	{
 		name = "Zombie Henchman (Lvl 20+)",
 		npcName = "Dracula",
 		npcPos = Vector3.new(-416, -33, -78),
 		combatNpc = "Zombie Henchman",
 	},
-	-- Nível 25+
 	{
 		name = "Vampire (Lvl 25+)",
-		npcName = "William Zeppeli", -- ou "Zeppeli"
+		npcName = "William Zeppeli",
 		npcPos = Vector3.new(-135, -31, 37),
 		combatNpc = "Vampire",
 	},
-	-- Nível 30+ (Boss)
 	{
 		name = "DIO Boss (Lvl 30+)",
 		npcName = "Doppio",
 		npcPos = Vector3.new(-40, 0, -988),
-		combatNpc = "DIO", -- ou o nome real do modelo do boss
+		combatNpc = "DIO",
 	},
-	-- Nível 35+ (Boss)
 	{
 		name = "Jotaro Boss (Lvl 35+)",
-		npcName = "DIO", -- o NPC que dá a quest
+		npcName = "DIO",
 		npcPos = Vector3.new(311, -26, 485),
-		combatNpc = "Jotaro", -- ou o nome real
+		combatNpc = "Jotaro",
 	},
-    {
+	{
 		name = "Heaven Ascension DIO (Lvl. 40+)",
-		npcName = "Jotaro (Heaven)", -- o NPC que dá a quest
+		npcName = "Jotaro (Heaven)",
 		npcPos = Vector3.new(8553, -479, 815),
-		combatNpc = "Heaven Ascension DIO", -- ou o nome real
+		combatNpc = "Heaven Ascension DIO",
 	},
 }
 
 local CONFIG = {
-	TWEEN_SPEED = 300,
-	SPAM_DELAY = 0.035,
+	UP_HEIGHT = 42,
+	SPEED = 1000,
 	DISTANCE_BEHIND = 3,
 	FLOAT_HEIGHT = 2,
-	PLAYER_BELOW = 20,
+	PLAYER_BELOW = 18,
 	AUTOCLICK_INTERVAL = 0.11,
-	Q_INTERVAL = 0.22,
+	Q_INTERVAL = 0.18,
+	
 }
 
 -- ======================
--- CRIAÇÃO DA GUI
+-- GUI
 -- ======================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "GiGisGui"
@@ -110,7 +100,6 @@ MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 MainFrame.BackgroundTransparency = 0.8
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = ScreenGui
-
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 5)
 
 local UIStrokeMain = Instance.new("UIStroke")
@@ -118,7 +107,6 @@ UIStrokeMain.Color = Color3.fromRGB(38, 255, 118)
 UIStrokeMain.Thickness = 2
 UIStrokeMain.Parent = MainFrame
 
--- Título
 local TitleFrame = Instance.new("Frame")
 TitleFrame.Size = UDim2.new(0, 173, 0, 70)
 TitleFrame.BackgroundColor3 = Color3.fromRGB(84, 255, 110)
@@ -134,7 +122,6 @@ TitleLabel.TextScaled = true
 TitleLabel.Font = Enum.Font.GothamBold
 TitleLabel.Parent = TitleFrame
 
--- Menu Lateral
 local SideFrame = Instance.new("Frame")
 SideFrame.Name = "SideFrame"
 SideFrame.Size = UDim2.new(0, 173, 0, 410)
@@ -148,7 +135,6 @@ UIListLayout.Padding = UDim.new(0, 10)
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayout.Parent = SideFrame
 
--- Área das Opções
 local OptionsFrame = Instance.new("Frame")
 OptionsFrame.Name = "OptionsFrame"
 OptionsFrame.Size = UDim2.new(0, 490, 0, 400)
@@ -181,8 +167,8 @@ local function createSideButton(name, order)
 	tab.BackgroundTransparency = 1
 	tab.Visible = false
 	tab.Parent = OptionsFrame
-
 	tabs[name] = tab
+
 	return btn
 end
 
@@ -265,7 +251,7 @@ strokeAct.Thickness = 2
 strokeAct.Parent = activateBtn
 
 -- ======================
--- VARIÁVEIS DE ESTADO
+-- VARIÁVEIS
 -- ======================
 local isRunning = false
 local currentStatus = "Aguardando"
@@ -274,9 +260,9 @@ local currentNPC = nil
 local autoClickRunning = false
 local qLoopRunning = false
 local selectedFarm = nil
+local antiFallPlatform = nil
 local missionButtons = {}
 
--- Criar botões da lista
 for i, farm in ipairs(FARMS) do
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(1, -10, 0, 32)
@@ -301,40 +287,15 @@ for i, farm in ipairs(FARMS) do
 	end)
 end
 
-listaContainer.CanvasSize = UDim2.new(0, 0, 0, layoutLista.AbsoluteContentSize.Y + 10)
+listaContainer.CanvasSize = UDim2.new(0, 0, 0, #FARMS * 38)
 
 -- ======================
 -- FUNÇÕES AUXILIARES
 -- ======================
-
--- ======================
--- FUNÇÕES AUXILIARES
--- ======================
-
--- Detecta se é Mobile
 local function isMobilePlayer()
 	return UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 end
 
--- Clique melhorado (funciona melhor no Mobile)
-local function simularCliqueEscala(pos)
-	local screenSize = camera.ViewportSize
-	local x = pos.X * screenSize.X
-	local y = pos.Y * screenSize.Y
-
-	if isMobilePlayer() then
-		-- Método mais estável no Mobile
-		VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 1)
-		task.wait(0.04)
-		VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 1)
-	else
-		-- Método normal (PC)
-		VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 0)
-		task.wait(0.02)
-		VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 0)
-	end
-end
-	-- ... resto do código
 local function getCharacterElements()
 	local char = player.Character
 	if not char then return nil, nil, nil end
@@ -349,13 +310,18 @@ end
 local function getNPCHealth(npc)
 	if not npc then return nil end
 	local health = npc:FindFirstChild("Health")
-	return (health and health:IsA("DoubleConstrainedValue")) and health or nil
+	if health and health:IsA("DoubleConstrainedValue") then
+		return health
+	end
+	return nil
 end
 
 local function getNPCHRP(npc)
 	if not npc then return nil end
 	return npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Torso") or npc:FindFirstChild("UpperTorso")
 end
+
+
 
 local function isDialogueGuiActive()
 	return playerGui:FindFirstChild("DialogueGui") ~= nil or playerGui:FindFirstChild("Dialogue") ~= nil
@@ -364,17 +330,19 @@ end
 local function getQuestData()
 	local stats = player:FindFirstChild("PlayerStats")
 	if not stats then return "", 0, 0 end
+
 	local quest = stats:FindFirstChild("Quest")
 	local progress = stats:FindFirstChild("QuestProgress")
 	local maxProgress = stats:FindFirstChild("QuestMaxProgress")
-	
+
 	local questValue = quest and quest.Value or ""
 	local progressValue = progress and progress.Value or 0
 	local maxProgressValue = maxProgress and maxProgress.Value or 0
-	
+
 	if questValue == "/" or string.gsub(questValue, " ", "") == "" then
 		questValue = ""
 	end
+
 	return questValue, progressValue, maxProgressValue
 end
 
@@ -389,18 +357,60 @@ local function fastWait(condition, timeout)
 	return false
 end
 
+local function simularCliqueEscala(pos)
+	local screenSize = camera.ViewportSize
+	local x = pos.X * screenSize.X
+	local y = pos.Y * screenSize.Y
+
+	if isMobilePlayer() then
+		VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 1)
+		task.wait(0.045)
+		VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 1)
+	else
+		VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 0)
+		task.wait(0.025)
+		VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 0)
+	end
+end
+
+local function createAntiFallPlatform()
+	if antiFallPlatform and antiFallPlatform.Parent then return end
+
+	antiFallPlatform = Instance.new("Part")
+	antiFallPlatform.Name = "AntiFallPlatform"
+	antiFallPlatform.Size = Vector3.new(6, 1, 6)
+	antiFallPlatform.Anchored = true
+	antiFallPlatform.CanCollide = true
+	antiFallPlatform.Transparency = 1
+	antiFallPlatform.Parent = workspace
+end
+
+local function updateAntiFallPlatform(hrp)
+	if not hrp then return end
+	createAntiFallPlatform()
+	antiFallPlatform.CFrame = CFrame.new(hrp.Position - Vector3.new(0, 3.5, 0))
+end
+
+local function destroyAntiFallPlatform()
+	if antiFallPlatform then
+		antiFallPlatform:Destroy()
+		antiFallPlatform = nil
+	end
+end
+
 -- ======================
 -- COMBATE
 -- ======================
 local function sendClick()
 	VirtualInputManager:SendMouseButtonEvent(1, 1, 0, true, game, 0)
-	task.wait(0.035)
+	task.wait(0.03)
 	VirtualInputManager:SendMouseButtonEvent(1, 1, 0, false, game, 0)
 end
 
 local function startAutoClick()
 	if autoClickRunning then return end
 	autoClickRunning = true
+
 	task.spawn(function()
 		while autoClickRunning and combatEnabled and isRunning do
 			pcall(sendClick)
@@ -413,16 +423,19 @@ end
 local function startQLoop()
 	if qLoopRunning then return end
 	qLoopRunning = true
+
 	task.spawn(function()
 		while combatEnabled and qLoopRunning and isRunning do
 			if getStandMorph() then break end
+
 			pcall(function()
 				VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Q, false, game)
 			end)
-			task.wait(0.04)
+			task.wait(0.07)
 			pcall(function()
 				VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Q, false, game)
 			end)
+
 			task.wait(CONFIG.Q_INTERVAL)
 		end
 		qLoopRunning = false
@@ -433,20 +446,29 @@ local function returnStandToPlayer()
 	currentNPC = nil
 	local stand = getStandMorph()
 	local _, humanoid, hrp = getCharacterElements()
+
 	if stand and hrp and hrp.Parent then
 		stand:PivotTo(hrp.CFrame * CFrame.new(0, 0, 3))
 	end
-	if humanoid then camera.CameraSubject = humanoid end
+
+	if humanoid then
+		camera.CameraSubject = humanoid
+	end
 end
 
 local function setCombatState(wantEnabled)
 	if wantEnabled then
 		local _, humanoid = getCharacterElements()
 		if not humanoid or humanoid.Health <= 0 then return end
+
 		combatEnabled = true
 		currentNPC = nil
+
+		if not getStandMorph() then
+			startQLoop()
+		end
+
 		startAutoClick()
-		if not getStandMorph() then startQLoop() end
 	else
 		combatEnabled = false
 		autoClickRunning = false
@@ -457,6 +479,7 @@ end
 
 local function findTargetNPC()
 	if not selectedFarm then return nil end
+
 	for _, npc in ipairs(living:GetChildren()) do
 		if npc:IsA("Model") and npc.Name == selectedFarm.combatNpc then
 			local health = getNPCHealth(npc)
@@ -469,22 +492,31 @@ local function findTargetNPC()
 	return nil
 end
 
+-- Heartbeat de combate
 RunService.Heartbeat:Connect(function()
 	if not combatEnabled or not isRunning then return end
+
 	local _, humanoid, hrp = getCharacterElements()
 	if not humanoid or humanoid.Health <= 0 or not hrp then
 		setCombatState(false)
 		return
 	end
 
+	updateAntiFallPlatform(hrp)
+
 	local stand = getStandMorph()
+
 	if not stand then
 		currentNPC = nil
-		startQLoop()
+		if not qLoopRunning then
+			startQLoop()
+		end
 		return
 	end
+
 	qLoopRunning = false
 
+	-- Verifica se o NPC atual morreu
 	if currentNPC then
 		local health = getNPCHealth(currentNPC)
 		local npcHrp = getNPCHRP(currentNPC)
@@ -493,6 +525,7 @@ RunService.Heartbeat:Connect(function()
 		end
 	end
 
+	-- Procura novo NPC
 	if not currentNPC then
 		currentNPC = findTargetNPC()
 		if not currentNPC then
@@ -504,7 +537,9 @@ RunService.Heartbeat:Connect(function()
 	local npcHrp = getNPCHRP(currentNPC)
 	if npcHrp then
 		local npcHumanoid = currentNPC:FindFirstChildOfClass("Humanoid")
-		if npcHumanoid then camera.CameraSubject = npcHumanoid end
+		if npcHumanoid then
+			camera.CameraSubject = npcHumanoid
+		end
 
 		local standTarget = npcHrp.CFrame * CFrame.new(0, CONFIG.FLOAT_HEIGHT, CONFIG.DISTANCE_BEHIND)
 		stand:PivotTo(standTarget)
@@ -519,97 +554,96 @@ RunService.Heartbeat:Connect(function()
 end)
 
 -- ======================
--- FUNÇÕES DE QUEST (CORRIGIDAS)
+-- MOVIMENTO (Sobe → Voa → Desce)
 -- ======================
-local function simularCliqueEscala(pos)
-	local screenSize = camera.ViewportSize
-	local x = pos.X * screenSize.X
-	local y = pos.Y * screenSize.Y
-	VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 0)
-	task.wait(0.02)
-	VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 0)
-end
-
 local function walkToNPC()
 	if not selectedFarm then return false end
-	currentStatus = "Indo até o NPC..."
+	currentStatus = "Indo até o NPC (Noclip)..."
 	setCombatState(false)
 
-	local _, _, root = getCharacterElements()
-	if not root then return false end
+	local character, humanoid, root = getCharacterElements()
+	if not character or not root or not humanoid then return false end
 
 	pcall(function()
 		root.Anchored = false
 		root.AssemblyLinearVelocity = Vector3.zero
 		root.AssemblyAngularVelocity = Vector3.zero
+		humanoid.PlatformStand = false
 	end)
 
-	local targetPos = selectedFarm.npcPos + Vector3.new(0, 2.5, 0)
-	local distance = (root.Position - targetPos).Magnitude
+	local targetPos = selectedFarm.npcPos + Vector3.new(0, 3, 0)
+	local startPos = root.Position
 
-	-- Já está perto o suficiente
-	if distance <= 6 then
+	if (startPos - targetPos).Magnitude <= 9 then
 		return true
 	end
 
-	-- Velocidade constante (studs por segundo)
-	local SPEED = 95
-	local duration = distance / SPEED
-
-	-- Limita pra não ficar ridiculamente longo ou curto
-	duration = math.clamp(duration, 0.6, 9)
-
-	local tweenInfo = TweenInfo.new(
-		duration,
-		Enum.EasingStyle.Linear,   -- velocidade constante
-		Enum.EasingDirection.Out,
-		0,
-		false,
-		0
-	)
-
-	local tween = TweenService:Create(root, tweenInfo, {
-		CFrame = CFrame.new(targetPos)
-	})
-
-	local finished = false
-	local connection = tween.Completed:Connect(function()
-		finished = true
-	end)
-
-	tween:Play()
-
-	local success = fastWait(function()
-		return finished or (root.Position - targetPos).Magnitude <= 5
-	end, duration + 1.5)
-
-	connection:Disconnect()
-
-	if not success then
-		tween:Cancel()
-		-- Força a posição final se falhar
-		pcall(function()
-			root.CFrame = CFrame.new(targetPos)
-		end)
+	-- Ativa noclip
+	local originalCanCollide = {}
+	for _, part in ipairs(character:GetDescendants()) do
+		if part:IsA("BasePart") then
+			originalCanCollide[part] = part.CanCollide
+			part.CanCollide = false
+		end
 	end
 
-	task.wait(0.25)
+	createAntiFallPlatform()
+
+	currentStatus = "Indo direto (Noclip)..."
+	local SPEED = CONFIG.SPEED or 105
+	local startTime = os.clock()
+	local distance = (startPos - targetPos).Magnitude
+	local maxTime = (distance / SPEED) + 1.5
+
+	while isRunning and (os.clock() - startTime) < maxTime do
+		local current = root.Position
+		local direction = (targetPos - current)
+
+		if direction.Magnitude <= 5 then
+			break
+		end
+
+		local step = math.min(SPEED * 0.016, direction.Magnitude)
+		root.CFrame = CFrame.new(current + direction.Unit * step)
+
+		-- Atualiza a plataforma embaixo
+		updateAntiFallPlatform(root)
+
+		task.wait()
+	end
+
+	-- Posição final
+	pcall(function()
+		root.CFrame = CFrame.new(targetPos)
+		root.AssemblyLinearVelocity = Vector3.zero
+		root.AssemblyAngularVelocity = Vector3.zero
+	end)
+
+	updateAntiFallPlatform(root)
+
+	-- Desativa noclip
+	for part, canCollide in pairs(originalCanCollide) do
+		if part and part.Parent then
+			part.CanCollide = canCollide
+		end
+	end
+
+	task.wait(0.3)
 	return true
 end
 
+-- ======================
+-- QUEST
+-- ======================
 local function triggerPrompt()
 	if not selectedFarm then return false end
 	currentStatus = "Ativando Prompt (E)"
 
 	local folder = workspace:FindFirstChild("Dialogues")
-	if not folder then 
-		warn("[AutoFarm] Pasta Dialogues não encontrada")
-		return false 
-	end
+	if not folder then return false end
 
 	local npc = folder:FindFirstChild(selectedFarm.npcName)
 	if not npc then
-		-- tenta achar por nome parcial
 		for _, v in ipairs(folder:GetChildren()) do
 			if string.find(string.lower(v.Name), string.lower(selectedFarm.npcName)) then
 				npc = v
@@ -618,35 +652,25 @@ local function triggerPrompt()
 		end
 	end
 
-	if not npc then
-		warn("[AutoFarm] NPC não encontrado: " .. selectedFarm.npcName)
-		return false
-	end
+	if not npc then return false end
 
 	local prompt = npc:FindFirstChildOfClass("ProximityPrompt")
-	if not prompt then
-		warn("[AutoFarm] ProximityPrompt não encontrado")
-		return false
-	end
+	if not prompt then return false end
 
 	prompt.RequiresLineOfSight = false
-	prompt.MaxActivationDistance = 20
+	prompt.MaxActivationDistance = 25
 
-	-- Método 1: fireproximityprompt
-	local success = pcall(function()
+	pcall(function()
 		fireproximityprompt(prompt)
 	end)
 
-	-- Método 2: Hold manual (mais confiável)
-	if not success then
-		pcall(function()
-			prompt:InputHoldBegin()
-			task.wait(prompt.HoldDuration + 0.15)
-			prompt:InputHoldEnd()
-		end)
-	end
+	task.wait(0.15)
+	pcall(function()
+		prompt:InputHoldBegin()
+		task.wait(prompt.HoldDuration + 0.1)
+		prompt:InputHoldEnd()
+	end)
 
-	-- Método 3: Pressionar E virtual
 	task.wait(0.1)
 	pcall(function()
 		VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
@@ -659,18 +683,14 @@ local function triggerPrompt()
 end
 
 local function clearAllDialogues()
-	currentStatus = "Spamando Cliques do Diálogo"
-	
-	local apareceu = fastWait(function() 
-		return isDialogueGuiActive() 
-	end, 4)
-	
-	if not apareceu then
-		warn("[AutoFarm] Diálogo não apareceu")
-		return false
-	end
+	currentStatus = "Fechando Diálogo..."
 
-	-- Posições de clique (mais posições para Mobile)
+	local apareceu = fastWait(function()
+		return isDialogueGuiActive()
+	end, 4)
+
+	if not apareceu then return false end
+
 	local positions = {
 		Vector2.new(0.50, 0.72),
 		Vector2.new(0.50, 0.68),
@@ -680,12 +700,12 @@ local function clearAllDialogues()
 		Vector2.new(0.38, 0.70),
 		Vector2.new(0.50, 0.80),
 		Vector2.new(0.50, 0.64),
-		Vector2.new(0.50, 0.85), -- extra mobile
-		Vector2.new(0.50, 0.78), -- extra mobile
+		Vector2.new(0.50, 0.85),
+		Vector2.new(0.50, 0.78),
 	}
 
+	local maxTime = isMobilePlayer() and 12 or 9
 	local start = os.clock()
-	local maxTime = isMobilePlayer() and 12 or 9 -- Mobile tem mais tempo
 
 	while isRunning and isDialogueGuiActive() and (os.clock() - start) < maxTime do
 		for _, pos in ipairs(positions) do
@@ -703,24 +723,19 @@ end
 local function executeHuntingFarming()
 	currentStatus = "Farmando: " .. (selectedFarm and selectedFarm.combatNpc or "mobs")
 	setCombatState(true)
-	task.wait(1.5)
+	task.wait(1.2)
 
 	local lastProgress = -1
 	local completedChecks = 0
 	local stuckTime = 0
-	local requiredCompletedChecks = 3
 
 	while isRunning do
 		local questName, currentProgress, maxProgress = getQuestData()
 
-		-- Atualiza status
 		if maxProgress > 0 then
 			currentStatus = string.format("Farmando: %s (%d/%d)", selectedFarm.combatNpc, currentProgress, maxProgress)
-		else
-			currentStatus = "Farmando: " .. (selectedFarm.combatNpc or "mobs")
 		end
 
-		-- ===== VERIFICAÇÃO DE VIDA DO MOB/BOSS =====
 		local targetAlive = false
 		for _, npc in ipairs(living:GetChildren()) do
 			if npc:IsA("Model") and npc.Name == selectedFarm.combatNpc then
@@ -732,39 +747,32 @@ local function executeHuntingFarming()
 			end
 		end
 
-		-- Condições para considerar a missão terminada
 		local isCompleted = false
 
-		-- 1. Progresso da quest completou
 		if maxProgress > 0 and currentProgress >= maxProgress then
 			isCompleted = true
 		end
 
-		-- 2. Quest sumiu e já tinha progresso
 		if questName == "" and lastProgress > 0 then
 			isCompleted = true
 		end
 
-		-- 3. Nenhum mob/boss vivo + já matou pelo menos 1
 		if not targetAlive and lastProgress > 0 then
 			isCompleted = true
 		end
 
 		if isCompleted then
 			completedChecks = completedChecks + 1
-			if completedChecks >= requiredCompletedChecks then
-				print("[AutoFarm] Missão concluída! Voltando pro NPC...")
+			if completedChecks >= 3 then
 				break
 			end
 		else
 			completedChecks = 0
 		end
 
-		-- Proteção de travamento
 		if currentProgress == lastProgress and currentProgress > 0 then
 			stuckTime = stuckTime + 0.7
-			if stuckTime > 40 then
-				warn("[AutoFarm] Progresso travado, reiniciando...")
+			if stuckTime > 45 then
 				break
 			end
 		else
@@ -776,7 +784,7 @@ local function executeHuntingFarming()
 	end
 
 	setCombatState(false)
-	task.wait(1.2)
+	task.wait(1)
 	return true
 end
 
@@ -784,8 +792,6 @@ end
 -- CICLO PRINCIPAL
 -- ======================
 local function runMasterFarmCycle()
-	print("[AutoFarm] Iniciando ciclo da missão:", selectedFarm and selectedFarm.name)
-
 	local steps = {
 		walkToNPC,
 		triggerPrompt,
@@ -797,7 +803,6 @@ local function runMasterFarmCycle()
 		if not isRunning then return end
 		local ok = step()
 		if not ok then
-			warn("[AutoFarm] Falha em uma etapa. Reiniciando ciclo...")
 			setCombatState(false)
 			task.wait(2)
 			return
@@ -808,6 +813,7 @@ end
 local function startBot()
 	if isRunning or not selectedFarm then return end
 	isRunning = true
+
 	task.spawn(function()
 		while isRunning do
 			runMasterFarmCycle()
@@ -820,9 +826,13 @@ end
 local function stopBot()
 	isRunning = false
 	setCombatState(false)
+	destroyAntiFallPlatform()
+
 	pcall(function()
 		local _, _, root = getCharacterElements()
-		if root then root.Anchored = false end
+		if root then
+			root.Anchored = false
+		end
 	end)
 end
 
@@ -838,7 +848,7 @@ end)
 activateBtn.MouseButton1Click:Connect(function()
 	if not selectedFarm then
 		activateBtn.Text = "Selecione uma missão!"
-		task.wait(1.4)
+		task.wait(1.3)
 		activateBtn.Text = isRunning and "DESLIGAR BOT" or "LIGAR BOT"
 		return
 	end
@@ -894,11 +904,13 @@ minimizeBtn.MouseButton1Click:Connect(function()
 end)
 
 local dragging, dragStart, startPos
+
 MainFrame.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		dragging = true
 		dragStart = input.Position
 		startPos = MainFrame.Position
+
 		input.Changed:Connect(function()
 			if input.UserInputState == Enum.UserInputState.End then
 				dragging = false
@@ -914,4 +926,4 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
-print("✅ GiGis + Auto Farm carregado e corrigido!")
+print("✅ GiGis Auto Farm (versão refeita) carregado!")
