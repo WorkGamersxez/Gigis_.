@@ -80,7 +80,7 @@ local FARMS = {
 }
 
 local CONFIG = {
-	SPEED = 1000,
+	SPEED = 3000,
 	DISTANCE_BEHIND = 3,
 	FLOAT_HEIGHT = 2,
 	PLAYER_BELOW = 25,
