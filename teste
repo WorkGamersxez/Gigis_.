@@ -705,42 +705,45 @@ local function executeHuntingFarming()
 	setCombatState(true)
 	task.wait(1.2)
 
-	local kills = 0
-	local killsNeeded = selectedFarm.killsNeeded or 5
 	local stuckTime = 0
+	local npcMorreu = false
 
 	while isRunning do
-		currentStatus = string.format("Farmando: %s (%d/%d)", selectedFarm.combatNpc, kills, killsNeeded)
+		currentStatus = "Atacando: " .. selectedFarm.combatNpc
 
 		if currentNPC then
 			local health = getNPCHealth(currentNPC)
+			-- Detecta a morte do NPC atual
 			if not health or health.Value <= 0 then
-				kills = kills + 1
-				currentNPC = nil
-				print("[AutoFarm] Kill:", kills, "/", killsNeeded)
+				print("[AutoFarm] NPC Derrotado! Reiniciando ciclo...")
+				npcMorreu = true
+				break
 			end
-		end
-
-		if kills >= killsNeeded then
-			print("[AutoFarm] Missão concluída!")
-			break
 		end
 
 		if not currentNPC then
 			stuckTime = stuckTime + 0.6
-			if stuckTime > 35 then
-				warn("[AutoFarm] Sem NPC por muito tempo")
+			if stuckTime > 15 then -- Reduzido para achar novos alvos mais rápido
+				warn("[AutoFarm] Procurando novo NPC...")
 				break
 			end
 		else
 			stuckTime = 0
 		end
 
-		task.wait(0.6)
+		task.wait(0.3) -- Loop mais rápido para detecção instantânea
 	end
 
+	-- Limpa o estado de combate e a câmera ANTES de voltar ao início
 	setCombatState(false)
-	task.wait(1)
+	currentNPC = nil
+	pcall(function()
+		camera.CameraSubject = player.Character:FindFirstChildOfClass("Humanoid")
+	end)
+	
+	task.wait(0.5)
+	
+	-- Se o NPC morreu, retorna TRUE para fechar o ciclo com sucesso e recomeçar
 	return true
 end
 
@@ -748,22 +751,19 @@ end
 -- CICLO PRINCIPAL
 -- ======================
 local function runMasterFarmCycle()
-	local steps = {
-		walkToNPC,
-		triggerPrompt,
-		clearAllDialogues,
-		executeHuntingFarming
-	}
-
-	for _, step in ipairs(steps) do
-		if not isRunning then return end
-		local ok = step()
-		if not ok then
-			setCombatState(false)
-			task.wait(2)
-			return
-		end
-	end
+	-- Executa rigidamente do início ao fim a cada repetição
+	if not isRunning then return end
+	if not walkToNPC() then return end
+	
+	if not isRunning then return end
+	if not triggerPrompt() then return end
+	
+	if not isRunning then return end
+	if not clearAllDialogues() then return end
+	
+	if not isRunning then return end
+	executeHuntingFarming() 
+	-- Ao terminar o executeHuntingFarming, a função acaba e o "startBot" inicia tudo do zero
 end
 
 local function startBot()
