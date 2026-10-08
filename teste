@@ -47,14 +47,14 @@ local FARMS = {
 		npcName = "Dracula",
 		npcPos = Vector3.new(-416, -33, -78),
 		combatNpc = "Zombie Henchman",
-		killsNeeded = 5,
+		killsNeeded = 3,
 	},
 	{
 		name = "Vampire (Lvl 25+)",
 		npcName = "William Zeppeli",
 		npcPos = Vector3.new(-135, -31, 37),
 		combatNpc = "Vampire",
-		killsNeeded = 5,
+		killsNeeded = 3,
 	},
 	{
 		name = "DIO Boss (Lvl 30+)",
