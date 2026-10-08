@@ -453,11 +453,24 @@ local function returnStandToPlayer()
 	local stand = getStandMorph()
 	local _, humanoid, hrp = getCharacterElements()
 	if stand and hrp and hrp.Parent then
-		stand:PivotTo(hrp.CFrame * CFrame.new(0, 0, 3))
+		-- Mantém o Stand 20 studs ABAIXO do player.
+		-- Evita clique/soco acidental no próprio personagem (ativando combate).
+		stand:PivotTo(hrp.CFrame * CFrame.new(0, -20, 0))
 	end
 	if humanoid then
 		camera.CameraSubject = humanoid
 	end
+end
+
+local function positionStandAbovePlayer(height)
+	-- height negativo = abaixo do player (padrão -20)
+	local stand = getStandMorph()
+	local _, _, hrp = getCharacterElements()
+	if not stand or not hrp or not hrp.Parent then return false end
+	local ok = pcall(function()
+		stand:PivotTo(hrp.CFrame * CFrame.new(0, height or -20, 0))
+	end)
+	return ok
 end
 
 local function setCombatState(wantEnabled)
@@ -474,7 +487,8 @@ local function setCombatState(wantEnabled)
 		combatEnabled = false
 		autoClickRunning = false
 		qLoopRunning = false
-		returnStandToPlayer()
+		-- Em vez de trazer o Stand para o player, força ele a ficar escondido abaixo
+		positionStandAbovePlayer(-CONFIG.PLAYER_BELOW) 
 	end
 end
 
@@ -492,17 +506,18 @@ local function findTargetNPC()
 	return nil
 end
 
--- ====================================================
--- CORREÇÃO DO LOOP DE COMBATE (HEARTBEAT)
--- ====================================================
 RunService.Heartbeat:Connect(function()
+	-- Se o combate estiver desligado mas o bot estiver rodando, mantém o Stand escondido abaixo
+	if not combatEnabled and isRunning then
+		positionStandAbovePlayer(-CONFIG.PLAYER_BELOW)
+		return
+	end
+
 	if not combatEnabled or not isRunning then return end
 
 	local _, humanoid, hrp = getCharacterElements()
-	if not humanoid or humanoid.Health <= 0 or not hrp then
-		setCombatState(false)
-		return
-	end
+-- O restante da função Heartbeat continua exatamente igual abaixo...
+
 
 	updateAntiFallPlatform(hrp)
 
@@ -517,22 +532,18 @@ RunService.Heartbeat:Connect(function()
 
 	qLoopRunning = false
 
-	-- Se o NPC atual sumir ou morrer, desativa o combate IMEDIATAMENTE
 	if currentNPC then
 		local health = getNPCHealth(currentNPC)
 		local npcHrp = getNPCHRP(currentNPC)
 		if not health or health.Value <= 0 or not npcHrp then
-			print("[Heartbeat] NPC morreu! Desligando cliques.")
 			currentNPC = nil
-			setCombatState(false) -- 🟢 Para o clique aqui antes que o próximo loop rode
-			return
 		end
 	end
 
 	if not currentNPC then
 		currentNPC = findTargetNPC()
 		if not currentNPC then
-			setCombatState(false) -- 🟢 Se não achou nenhum outro NPC, garante que o clique pare
+			returnStandToPlayer()
 			return
 		end
 	end
@@ -555,7 +566,6 @@ RunService.Heartbeat:Connect(function()
 		end)
 	end
 end)
-
 
 -- ======================
 -- MOVIMENTO (Noclip + AntiFall)
@@ -673,6 +683,51 @@ local function triggerPrompt()
 	return true
 end
 
+local questAlreadyActivatedAtTeleport = false
+
+-- ======================
+-- TELEPORTE ALEATORIO APOS DERROTAR O NPC
+-- Centro do raio: posicao configurada do NPC da missao.
+-- O ciclo principal depois retorna ao NPC e ativa o prompt normalmente.
+-- ======================
+local function teleportRandomNearQuestNPC()
+    if not selectedFarm or not isRunning then
+        return false
+    end
+
+    local character, humanoid, root = getCharacterElements()
+    if not character or not humanoid or not root or humanoid.Health <= 0 then
+        return false
+    end
+
+    currentStatus = "Teleportando para perto do NPC da missao..."
+
+    local center = selectedFarm.npcPos
+    local angle = math.random() * math.pi * 2
+    -- sqrt distribui os pontos de forma mais uniforme dentro do circulo.
+    local radius = math.sqrt(math.random()) * 100
+    local destination = Vector3.new(
+        center.X + math.cos(angle) * radius,
+        center.Y + 3,
+        center.Z + math.sin(angle) * radius
+    )
+
+    local ok, err = pcall(function()
+        root.Anchored = false
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+        root.CFrame = CFrame.new(destination)
+    end)
+
+    if not ok then
+        warn("[AutoFarm] Falha no teleporte aleatorio: " .. tostring(err))
+        return false
+    end
+
+    task.wait(0.5)
+    return isRunning
+end
+
 local function clearAllDialogues()
 	currentStatus = "Fechando Diálogo..."
 
@@ -749,16 +804,47 @@ local function executeHuntingFarming()
 		task.wait(0.3) -- Loop mais rápido para detecção instantânea
 	end
 
-	-- Limpa o estado de combate e a câmera ANTES de voltar ao início
-	setCombatState(false)
-	currentNPC = nil
-	pcall(function()
-		camera.CameraSubject = player.Character:FindFirstChildOfClass("Humanoid")
-	end)
-	
-	task.wait(0.5)
-	
-	-- Se o NPC morreu, retorna TRUE para fechar o ciclo com sucesso e recomeçar
+	-- Encerra o combate e restaura a camera.
+local function setCombatState(wantEnabled)
+	if wantEnabled then
+		local _, humanoid = getCharacterElements()
+		if not humanoid or humanoid.Health <= 0 then return end
+		combatEnabled = true
+		currentNPC = nil
+		if not getStandMorph() then
+			startQLoop()
+		end
+		startAutoClick()
+	else
+		combatEnabled = false
+		autoClickRunning = false
+		qLoopRunning = false
+		returnStandToPlayer() -- <-- ESTA LINHA TRAZ O STAND DE VOLTA
+	end
+end
+
+
+	-- Ao derrotar o inimigo, teleporta para um ponto aleatorio num raio de 100 studs
+	-- e tenta ativar a missao desse local, sem caminhar de volta ate o NPC.
+	if npcMorreu and isRunning then
+		-- Mantem o Stand 20 studs ABAIXO do personagem apos a derrota.
+		positionStandAbovePlayer(-20)
+
+		if teleportRandomNearQuestNPC() then
+			-- Reposiciona novamente, pois o personagem mudou de local.
+			task.wait(0.1)
+			positionStandAbovePlayer(-20)
+			task.wait(0.25)
+			if triggerPrompt() then
+				clearAllDialogues()
+				questAlreadyActivatedAtTeleport = true
+			end
+		else
+			-- Se o teleporte falhar, deixa o Stand abaixo do personagem mesmo assim.
+			positionStandAbovePlayer(-20)
+		end
+	end
+
 	return true
 end
 
@@ -766,18 +852,20 @@ end
 -- CICLO PRINCIPAL
 -- ======================
 local function runMasterFarmCycle()
-	-- Executa rigidamente do início ao fim a cada repetição
+	-- Se a missao ja foi ativada logo apos o teleporte, nao repetir os passos do NPC.
 	if not isRunning then return end
-	if not walkToNPC() then return end
-	
+	if questAlreadyActivatedAtTeleport then
+		questAlreadyActivatedAtTeleport = false
+	else
+		if not walkToNPC() then return end
+		if not isRunning then return end
+		if not triggerPrompt() then return end
+		if not isRunning then return end
+		if not clearAllDialogues() then return end
+	end
+
 	if not isRunning then return end
-	if not triggerPrompt() then return end
-	
-	if not isRunning then return end
-	if not clearAllDialogues() then return end
-	
-	if not isRunning then return end
-	executeHuntingFarming() 
+	executeHuntingFarming()
 	-- Ao terminar o executeHuntingFarming, a função acaba e o "startBot" inicia tudo do zero
 end
 
