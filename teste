@@ -27,48 +27,56 @@ local FARMS = {
 		npcName = "Officer Sam [Lvl. 1+]",
 		npcPos = Vector3.new(-474, 10, -777),
 		combatNpc = "Thug",
+		killsNeeded = 5, -- quantidade de mobs que precisa matar
 	},
 	{
 		name = "Corrupt Police (Lvl 10+)",
 		npcName = "Deputy Bertrude",
 		npcPos = Vector3.new(-583, -26, -705),
 		combatNpc = "Corrupt Police",
+		killsNeeded = 5,
 	},
 	{
 		name = "Alpha Thug (Lvl 15+)",
 		npcName = "Abbacchio's Partner",
 		npcPos = Vector3.new(-579, -26, -581),
 		combatNpc = "Alpha Thug",
+		killsNeeded = 5,
 	},
 	{
 		name = "Zombie Henchman (Lvl 20+)",
 		npcName = "Dracula",
 		npcPos = Vector3.new(-416, -33, -78),
 		combatNpc = "Zombie Henchman",
+		killsNeeded = 3,
 	},
 	{
 		name = "Vampire (Lvl 25+)",
 		npcName = "William Zeppeli",
 		npcPos = Vector3.new(-135, -31, 37),
 		combatNpc = "Vampire",
+		killsNeeded = 3,
 	},
 	{
 		name = "DIO Boss (Lvl 30+)",
 		npcName = "Doppio",
 		npcPos = Vector3.new(-40, 0, -988),
 		combatNpc = "DIO",
+		killsNeeded = 1, -- boss geralmente é 1
 	},
 	{
 		name = "Jotaro Boss (Lvl 35+)",
 		npcName = "DIO",
 		npcPos = Vector3.new(311, -26, 485),
 		combatNpc = "Jotaro",
+		killsNeeded = 1,
 	},
 	{
 		name = "Heaven Ascension DIO (Lvl. 40+)",
 		npcName = "Jotaro (Heaven)",
 		npcPos = Vector3.new(8553, -479, 815),
 		combatNpc = "Heaven Ascension DIO",
+		killsNeeded = 1,
 	},
 }
 
@@ -721,66 +729,50 @@ local function clearAllDialogues()
 end
 
 local function executeHuntingFarming()
-	currentStatus = "Farmando: " .. (selectedFarm and selectedFarm.combatNpc or "mobs")
+	if not selectedFarm then return false end
+
+	currentStatus = "Farmando: " .. selectedFarm.combatNpc
 	setCombatState(true)
 	task.wait(1.2)
 
-	local lastProgress = -1
-	local completedChecks = 0
+	local kills = 0
+	local killsNeeded = selectedFarm.killsNeeded or 5
+	local lastNPC = nil
 	local stuckTime = 0
 
 	while isRunning do
-		local questName, currentProgress, maxProgress = getQuestData()
+		-- Atualiza status
+		currentStatus = string.format("Farmando: %s (%d/%d)", selectedFarm.combatNpc, kills, killsNeeded)
 
-		if maxProgress > 0 then
-			currentStatus = string.format("Farmando: %s (%d/%d)", selectedFarm.combatNpc, currentProgress, maxProgress)
-		end
-
-		local targetAlive = false
-		for _, npc in ipairs(living:GetChildren()) do
-			if npc:IsA("Model") and npc.Name == selectedFarm.combatNpc then
-				local health = getNPCHealth(npc)
-				if health and health.Value > 0 then
-					targetAlive = true
-					break
-				end
+		-- Verifica se o NPC atual morreu
+		if currentNPC then
+			local health = getNPCHealth(currentNPC)
+			if not health or health.Value <= 0 then
+				-- Matou um
+				kills = kills + 1
+				currentNPC = nil
+				print("[AutoFarm] Kill! Agora:", kills, "/", killsNeeded)
 			end
 		end
 
-		local isCompleted = false
-
-		if maxProgress > 0 and currentProgress >= maxProgress then
-			isCompleted = true
+		-- Já matou o suficiente?
+		if kills >= killsNeeded then
+			print("[AutoFarm] Missão concluída por kills!")
+			break
 		end
 
-		if questName == "" and lastProgress > 0 then
-			isCompleted = true
-		end
-
-		if not targetAlive and lastProgress > 0 then
-			isCompleted = true
-		end
-
-		if isCompleted then
-			completedChecks = completedChecks + 1
-			if completedChecks >= 3 then
-				break
-			end
-		else
-			completedChecks = 0
-		end
-
-		if currentProgress == lastProgress and currentProgress > 0 then
-			stuckTime = stuckTime + 0.7
-			if stuckTime > 45 then
+		-- Proteção de travamento (caso não ache NPC por muito tempo)
+		if not currentNPC then
+			stuckTime = stuckTime + 0.6
+			if stuckTime > 35 then
+				warn("[AutoFarm] Sem NPC por muito tempo, reiniciando...")
 				break
 			end
 		else
 			stuckTime = 0
-			lastProgress = currentProgress
 		end
 
-		task.wait(0.7)
+		task.wait(0.6)
 	end
 
 	setCombatState(false)
