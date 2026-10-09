@@ -13,8 +13,8 @@ local camera = workspace.CurrentCamera
 local living = workspace:WaitForChild("Living")
 
 -- Remove GUI antiga
-if playerGui:FindFirstChild("GiGisGui") then
-	playerGui.GiGisGui:Destroy()
+if playerGui:FindFirstChild("HailHitlerHUBGui") then
+	playerGui.HailHitlerHUBGui:Destroy()
 end
 
 -- ======================
@@ -99,7 +99,7 @@ local CONFIG = {
 -- GUI
 -- ======================
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "GiGisGui"
+ScreenGui.Name = "HailHitlerHUBGui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = playerGui
@@ -149,7 +149,7 @@ TitleFrame.Parent = MainFrame
 local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Size = UDim2.new(1, 0, 1, 0)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "GiGis_."
+TitleLabel.Text = "HailHitlerHUB"
 TitleLabel.TextColor3 = Color3.fromRGB(0, 0, 0)
 TitleLabel.TextScaled = true
 TitleLabel.Font = Enum.Font.GothamBold
