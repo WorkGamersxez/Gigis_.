@@ -1,25 +1,179 @@
 -- ============================================================================= --
--- NORTH_. AUTO FARM - MASTER MULTI-NPC SYSTEM (2026)
+-- NORTH_. AUTO FARM - SIGIL SOUTH SIDE EDITION WITH REMEMBER WARNING (2026)
 -- ============================================================================= --
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local VirtualUser = game:GetService("VirtualUser")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local camera = workspace.CurrentCamera
 local living = workspace:WaitForChild("Living")
 
--- Remove GUIs anteriores
-if playerGui:FindFirstChild("NorthNPCHubGui") then
-	playerGui.NorthNPCHubGui:Destroy()
+-- Configuração do Arquivo Local de Salvamento
+local SAVE_FILE_NAME = "NorthAutoFarm_SkipWarning.txt"
+
+-- Limpa interfaces anteriores se existirem
+if playerGui:FindFirstChild("NorthSigilHubGui") then
+	playerGui.NorthSigilHubGui:Destroy()
+end
+if playerGui:FindFirstChild("NorthWarningGui") then
+	playerGui.NorthWarningGui:Destroy()
 end
 
--- ======================
--- CONFIGURAÇÕES & LISTA DE MISSÕES
--- ======================
+-- ============================================================================= --
+-- LÓGICA DE VERIFICAÇÃO DO AVISO
+-- ============================================================================= --
+local shouldShowWarning = true
+
+-- Verifica se a opção "Nunca mais mostrar" já foi salva anteriormente no executor
+if readfile and isfile and isfile(SAVE_FILE_NAME) then
+	pcall(function()
+		if readfile(SAVE_FILE_NAME) == "true" then
+			shouldShowWarning = false
+		end
+	end)
+end
+
+if shouldShowWarning then
+	local warningGui = Instance.new("ScreenGui")
+	warningGui.Name = "NorthWarningGui"
+	warningGui.ResetOnSpawn = false
+	warningGui.Parent = playerGui
+
+	local warningFrame = Instance.new("Frame")
+	warningFrame.Name = "WarningFrame"
+	warningFrame.Size = UDim2.new(0, 460, 0, 250)
+	warningFrame.Position = UDim2.new(0.5, -230, 0.5, -125)
+	warningFrame.BackgroundColor3 = Color3.fromRGB(15, 17, 22)
+	warningFrame.BorderSizePixel = 0
+	warningFrame.Active = true
+	warningFrame.Parent = warningGui
+
+	Instance.new("UICorner", warningFrame).CornerRadius = UDim.new(0, 8)
+
+	local warningStroke = Instance.new("UIStroke", warningFrame)
+	warningStroke.Color = Color3.fromRGB(230, 70, 70)
+	warningStroke.Thickness = 2
+
+	local warningTitle = Instance.new("TextLabel", warningFrame)
+	warningTitle.Size = UDim2.new(1, 0, 0, 40)
+	warningTitle.BackgroundTransparency = 1
+	warningTitle.Text = "⚠️ AVISO DE SEGURANÇA"
+	warningTitle.TextColor3 = Color3.fromRGB(255, 80, 80)
+	warningTitle.Font = Enum.Font.GothamBold
+	warningTitle.TextSize = 16
+
+	local warningMsg = Instance.new("TextLabel", warningFrame)
+	warningMsg.Size = UDim2.new(1, -40, 0, 50)
+	warningMsg.Position = UDim2.new(0, 20, 0, 40)
+	warningMsg.BackgroundTransparency = 1
+	warningMsg.Text = "Esse script pode causar ban. Deseja continuar?"
+	warningMsg.TextColor3 = Color3.fromRGB(230, 235, 245)
+	warningMsg.Font = Enum.Font.Gotham
+	warningMsg.TextSize = 14
+	warningMsg.TextWrapped = true
+
+	local timerLabel = Instance.new("TextLabel", warningFrame)
+	timerLabel.Size = UDim2.new(1, 0, 0, 20)
+	timerLabel.Position = UDim2.new(0, 0, 0, 95)
+	timerLabel.BackgroundTransparency = 1
+	timerLabel.Text = "Tempo restante: 30s"
+	timerLabel.TextColor3 = Color3.fromRGB(150, 160, 180)
+	timerLabel.Font = Enum.Font.Gotham
+	timerLabel.TextSize = 12
+
+	-- Botão 1: Continuar Apenas Hoje
+	local continueBtn = Instance.new("TextButton", warningFrame)
+	continueBtn.Size = UDim2.new(0, 410, 0, 32)
+	continueBtn.Position = UDim2.new(0, 25, 0, 125)
+	continueBtn.BackgroundColor3 = Color3.fromRGB(30, 140, 70)
+	continueBtn.Text = "CONTINUAR"
+	continueBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	continueBtn.Font = Enum.Font.GothamBold
+	continueBtn.TextSize = 12
+	Instance.new("UICorner", continueBtn).CornerRadius = UDim.new(0, 5)
+
+	-- Botão 2: Continuar e Salvar (Nunca Mais Mostrar)
+	local dontShowBtn = Instance.new("TextButton", warningFrame)
+	dontShowBtn.Size = UDim2.new(0, 410, 0, 32)
+	dontShowBtn.Position = UDim2.new(0, 25, 0, 163)
+	dontShowBtn.BackgroundColor3 = Color3.fromRGB(30, 90, 180)
+	dontShowBtn.Text = "CONTINUAR (NUNCA MAIS MOSTRAR ESTA MENSAGEM)"
+	dontShowBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	dontShowBtn.Font = Enum.Font.GothamBold
+	dontShowBtn.TextSize = 11
+	Instance.new("UICorner", dontShowBtn).CornerRadius = UDim.new(0, 5)
+
+	-- Botão 3: Fechar Script
+	local closeBtn = Instance.new("TextButton", warningFrame)
+	closeBtn.Size = UDim2.new(0, 410, 0, 32)
+	closeBtn.Position = UDim2.new(0, 25, 0, 201)
+	closeBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+	closeBtn.Text = "FECHAR SCRIPT"
+	closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	closeBtn.Font = Enum.Font.GothamBold
+	closeBtn.TextSize = 12
+	Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 5)
+
+	local userDecision = nil
+
+	continueBtn.MouseButton1Click:Connect(function()
+		userDecision = "continue"
+	end)
+
+	dontShowBtn.MouseButton1Click:Connect(function()
+		userDecision = "never_show"
+		if writefile then
+			pcall(function()
+				writefile(SAVE_FILE_NAME, "true")
+			end)
+		end
+	end)
+
+	closeBtn.MouseButton1Click:Connect(function()
+		userDecision = "close"
+	end)
+
+	-- Timer regressivo de 30 segundos
+	task.spawn(function()
+		local timeLeft = 30
+		while timeLeft > 0 and userDecision == nil do
+			timerLabel.Text = "Tempo restante: " .. tostring(timeLeft) .. "s"
+			task.wait(1)
+			timeLeft = timeLeft - 1
+		end
+		if userDecision == nil then
+			userDecision = "close"
+		end
+	end)
+
+	while userDecision == nil do
+		task.wait(0.1)
+	end
+
+	warningGui:Destroy()
+
+	if userDecision == "close" then
+		warn("❌ Execução cancelada pelo usuário ou por tempo limite.")
+		return
+	end
+end
+
+-- ============================================================================= --
+-- SCRIPT PRINCIPAL E INTERFACE HUB (CARREGADOS APÓS CONFIRMAÇÃO)
+-- ============================================================================= --
+
+-- Anti-AFK
+player.Idled:Connect(function()
+	VirtualUser:CaptureController()
+	VirtualUser:ClickButton2(Vector2.new(0, 0))
+end)
+
+-- Lista de Missões
 local NPC_LIST = {
 	{
 		name = "Thug (Lvl 1+)",
@@ -87,8 +241,8 @@ local NPC_LIST = {
 }
 
 local CONFIG = {
-	TWEEN_SPEED = 250,
-	PLAYER_BELOW = 24,
+	TWEEN_SPEED = 120,
+	PLAYER_BELOW = 25,
 	FLOAT_HEIGHT = 2,
 	DISTANCE_BEHIND = 2,
 	M1_INTERVAL = 0.08,
@@ -96,9 +250,6 @@ local CONFIG = {
 	SPAM_DELAY = 0.08,
 }
 
--- ======================
--- VARIÁVEIS DE ESTADO
--- ======================
 local isRunning = false
 local currentStatus = "Aguardando"
 local selectedMission = NPC_LIST[1]
@@ -108,9 +259,6 @@ local targetNpcHrp = nil
 local antiFallPlatform = nil
 local qLoopRunning = false
 
--- ======================
--- FUNÇÕES DE LEITURA
--- ======================
 local function getCharacterElements()
 	local char = player.Character
 	if not char then return nil, nil, nil end
@@ -148,12 +296,8 @@ local function fastWait(condition, timeout)
 	return false
 end
 
--- ======================
--- MOTOR DE RENDERIZAÇÃO & STAND LOCK
--- ======================
 RunService.RenderStepped:Connect(function()
 	if isRunning then
-		-- Noclip constante
 		if player.Character then
 			for _, part in pairs(player.Character:GetDescendants()) do
 				if part:IsA("BasePart") then part.CanCollide = false end
@@ -173,7 +317,6 @@ RunService.RenderStepped:Connect(function()
 			end
 		end
 
-		-- Trava do Stand atrás do NPC
 		if targetNpcHrp and targetNpcHrp.Parent then
 			local stand = getStandMorph()
 			if stand and stand.PrimaryPart then
@@ -194,9 +337,6 @@ local function destroyAntiFallPlatform()
 	end
 end
 
--- ======================
--- COMBATE NATIVO (M1)
--- ======================
 local function sendNativeM1()
 	local char = player.Character
 	if not char then return end
@@ -255,16 +395,30 @@ local function findNearestTargetNPC()
 
 	local closest = nil
 	local shortestDist = math.huge
+	local targetName = selectedMission.combatNpc
 
 	for _, npc in ipairs(living:GetChildren()) do
-		if npc:IsA("Model") and string.find(string.lower(npc.Name), string.lower(selectedMission.combatNpc)) then
-			local health = getNPCHealth(npc)
-			local root = getNPCHRP(npc)
-			if health and health.Value > 0 and root then
-				local dist = (playerHrp.Position - root.Position).Magnitude
-				if dist < shortestDist then
-					shortestDist = dist
-					closest = npc
+		if npc:IsA("Model") then
+			local matchFound = false
+			if npc.Name == targetName then
+				matchFound = true
+			elseif targetName == "Jotaro" and npc.Name == "Jotaro" then
+				matchFound = true
+			elseif targetName == "DIO" and npc.Name == "DIO" then
+				matchFound = true
+			elseif string.lower(npc.Name) == string.lower(targetName) then
+				matchFound = true
+			end
+
+			if matchFound then
+				local health = getNPCHealth(npc)
+				local root = getNPCHRP(npc)
+				if health and health.Value > 0 and root then
+					local dist = (playerHrp.Position - root.Position).Magnitude
+					if dist < shortestDist then
+						shortestDist = dist
+						closest = npc
+					end
 				end
 			end
 		end
@@ -307,8 +461,10 @@ RunService.Heartbeat:Connect(function()
 	local npcHrp = getNPCHRP(currentNPC)
 	if npcHrp then
 		targetNpcHrp = npcHrp
-		local npcHumanoid = currentNPC:FindFirstChildOfClass("Humanoid")
-		if npcHumanoid then camera.CameraSubject = npcHumanoid end
+		
+		if stand and stand.PrimaryPart then
+			camera.CameraSubject = stand.PrimaryPart
+		end
 
 		local playerTargetCFrame = npcHrp.CFrame - Vector3.new(0, CONFIG.PLAYER_BELOW, 0)
 		pcall(function()
@@ -321,11 +477,8 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
--- ======================
--- ROTAS DA MISSÃO
--- ======================
 local function walkToNPC()
-	currentStatus = "Viajando até " .. selectedMission.npcName
+	currentStatus = "Viajando: " .. selectedMission.npcName
 	setCombatState(false)
 
 	local _, _, root = getCharacterElements()
@@ -364,7 +517,7 @@ local function walkToNPC()
 end
 
 local function triggerPrompt()
-	currentStatus = "Ativando conversa com " .. selectedMission.npcName
+	currentStatus = "Falando com: " .. selectedMission.npcName
 	local folder = workspace:FindFirstChild("Dialogues")
 	local npc = folder and folder:FindFirstChild(selectedMission.npcName)
 	local prompt = npc and npc:FindFirstChildOfClass("ProximityPrompt")
@@ -386,7 +539,7 @@ local function triggerPrompt()
 end
 
 local function clearAllDialogues()
-	currentStatus = "Aceitando Missão..."
+	currentStatus = "Aceitando..."
 
 	local menuApareceu = fastWait(function() return isDialogueGuiActive() end, 3)
 	if not menuApareceu then return false end
@@ -441,7 +594,7 @@ local function clearAllDialogues()
 end
 
 local function executeHuntingFarming()
-	currentStatus = "Derrotando " .. selectedMission.combatNpc
+	currentStatus = "Caçando: " .. selectedMission.combatNpc
 	setCombatState(true)
 	task.wait(1.0)
 
@@ -450,17 +603,16 @@ local function executeHuntingFarming()
 		local target = findNearestTargetNPC()
 		if target then
 			local health = getNPCHealth(target)
-			-- Aguarda o NPC atual ser eliminado
 			while isRunning and target and target.Parent and health and health.Value > 0 do
 				task.wait(0.2)
 			end
 			killsDone = killsDone + 1
-			print(string.format("[Progresso] %s: %d / %d mortos", selectedMission.combatNpc, killsDone, selectedMission.killsNeeded))
 		else
 			task.wait(0.5)
 		end
 	end
 
+	task.wait(0.2)
 	setCombatState(false)
 	return true
 end
@@ -471,7 +623,6 @@ local function runMasterFarmCycle()
 		if not isRunning then return end
 		local success = step()
 		if not success then
-			warn("[Sistema] Reiniciando etapa de rota...")
 			setCombatState(false)
 			task.wait(1.5)
 			return
@@ -479,127 +630,158 @@ local function runMasterFarmCycle()
 	end
 end
 
--- ======================
--- INTERFACE GRÁFICA (GUI)
--- ======================
+-- GUI PRINCIPAL SIGIL SOUTH SIDE
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "NorthNPCHubGui"
+ScreenGui.Name = "NorthSigilHubGui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = playerGui
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 520, 0, 420)
-MainFrame.Position = UDim2.new(0.3, 0, 0.2, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
+MainFrame.Size = UDim2.new(0, 500, 0, 380)
+MainFrame.Position = UDim2.new(0.3, 0, 0.25, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(12, 14, 18)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Parent = ScreenGui
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
 
-local UIStroke = Instance.new("UIStroke")
-UIStroke.Color = Color3.fromRGB(38, 255, 118)
-UIStroke.Thickness = 2
-UIStroke.Parent = MainFrame
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(220, 230, 245)
+MainStroke.Thickness = 2
+MainStroke.Parent = MainFrame
+
+local SideBar = Instance.new("Frame")
+SideBar.Name = "SideBar"
+SideBar.Size = UDim2.new(0, 50, 1, 0)
+SideBar.Position = UDim2.new(0, 0, 0, 0)
+SideBar.BackgroundColor3 = Color3.fromRGB(235, 240, 250)
+SideBar.BorderSizePixel = 0
+SideBar.Parent = MainFrame
+
+local SideTitle = Instance.new("TextLabel")
+SideTitle.Name = "SideTitle"
+SideTitle.Size = UDim2.new(1, 0, 1, 0)
+SideTitle.BackgroundTransparency = 1
+SideTitle.Text = "NORTH SIDE"
+SideTitle.TextColor3 = Color3.fromRGB(25, 75, 160)
+SideTitle.Font = Enum.Font.Garamond
+SideTitle.TextSize = 50
+SideTitle.Rotation = -90
+SideTitle.Parent = SideBar
+
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Size = UDim2.new(1, -50, 1, 0)
+ContentFrame.Position = UDim2.new(0, 50, 0, 0)
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Parent = MainFrame
 
 local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, 0, 0, 40)
-Header.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+Header.Size = UDim2.new(1, 0, 0, 45)
+Header.BackgroundColor3 = Color3.fromRGB(18, 22, 30)
 Header.BorderSizePixel = 0
-Header.Parent = MainFrame
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
+Header.Parent = ContentFrame
 
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -20, 1, 0)
-Title.Position = UDim2.new(0, 10, 0, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "North_. - Auto Quest & Combat Hub"
-Title.TextColor3 = Color3.fromRGB(38, 255, 118)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 15
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Parent = Header
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, -15, 0, 22)
+TitleLabel.Position = UDim2.new(0, 15, 0, 3)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "NORTH_. AUTO FARM"
+TitleLabel.TextColor3 = Color3.fromRGB(240, 245, 255)
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextSize = 14
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = Header
 
 local StatusText = Instance.new("TextLabel")
-StatusText.Size = UDim2.new(1, -20, 0, 25)
-StatusText.Position = UDim2.new(0, 10, 0, 45)
+StatusText.Size = UDim2.new(1, -15, 0, 18)
+StatusText.Position = UDim2.new(0, 15, 0, 23)
 StatusText.BackgroundTransparency = 1
 StatusText.Text = "Status: Aguardando"
-StatusText.TextColor3 = Color3.fromRGB(200, 255, 200)
+StatusText.TextColor3 = Color3.fromRGB(110, 160, 235)
 StatusText.Font = Enum.Font.Gotham
-StatusText.TextSize = 13
+StatusText.TextSize = 11
 StatusText.TextXAlignment = Enum.TextXAlignment.Left
-StatusText.Parent = MainFrame
+StatusText.Parent = Header
 
 local ScrollContainer = Instance.new("ScrollingFrame")
-ScrollContainer.Size = UDim2.new(1, -20, 1, -125)
-ScrollContainer.Position = UDim2.new(0, 10, 0, 75)
+ScrollContainer.Size = UDim2.new(1, -20, 1, -105)
+ScrollContainer.Position = UDim2.new(0, 10, 0, 52)
 ScrollContainer.BackgroundTransparency = 1
 ScrollContainer.BorderSizePixel = 0
-ScrollContainer.ScrollBarThickness = 4
-ScrollContainer.CanvasSize = UDim2.new(0, 0, 0, #NPC_LIST * 80)
-ScrollContainer.Parent = MainFrame
+ScrollContainer.ScrollBarThickness = 3
+ScrollContainer.ScrollBarImageColor3 = Color3.fromRGB(70, 120, 210)
+ScrollContainer.CanvasSize = UDim2.new(0, 0, 0, #NPC_LIST * 68)
+ScrollContainer.Parent = ContentFrame
 
 local UIList = Instance.new("UIListLayout")
-UIList.Padding = UDim.new(0, 8)
+UIList.Padding = UDim.new(0, 6)
 UIList.Parent = ScrollContainer
 
 local ActivateBtn = Instance.new("TextButton")
 ActivateBtn.Size = UDim2.new(1, -20, 0, 38)
 ActivateBtn.Position = UDim2.new(0, 10, 1, -45)
-ActivateBtn.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
-ActivateBtn.Text = "LIGAR BOT (MISSÃO SELECIONADA)"
+ActivateBtn.BackgroundColor3 = Color3.fromRGB(30, 90, 200)
+ActivateBtn.Text = "LIGAR FARM"
 ActivateBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ActivateBtn.Font = Enum.Font.GothamBold
-ActivateBtn.TextSize = 14
-ActivateBtn.Parent = MainFrame
-Instance.new("UICorner", ActivateBtn).CornerRadius = UDim.new(0, 6)
+ActivateBtn.TextSize = 13
+ActivateBtn.Parent = ContentFrame
+
+local BtnStroke = Instance.new("UIStroke")
+BtnStroke.Color = Color3.fromRGB(200, 220, 255)
+BtnStroke.Thickness = 1
+BtnStroke.Parent = ActivateBtn
 
 local itemButtons = {}
 
 for i, item in ipairs(NPC_LIST) do
 	local Card = Instance.new("Frame")
-	Card.Size = UDim2.new(1, -8, 0, 72)
-	Card.BackgroundColor3 = (item == selectedMission) and Color3.fromRGB(35, 60, 45) or Color3.fromRGB(28, 28, 32)
+	Card.Size = UDim2.new(1, -6, 0, 62)
+	Card.BackgroundColor3 = (item == selectedMission) and Color3.fromRGB(25, 45, 80) or Color3.fromRGB(18, 22, 28)
 	Card.BorderSizePixel = 0
 	Card.Parent = ScrollContainer
-	Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 6)
+
+	local CardStroke = Instance.new("UIStroke")
+	CardStroke.Color = (item == selectedMission) and Color3.fromRGB(100, 160, 255) or Color3.fromRGB(40, 50, 65)
+	CardStroke.Thickness = 1
+	CardStroke.Parent = Card
 
 	local InfoText = Instance.new("TextLabel")
-	InfoText.Size = UDim2.new(0.7, 0, 1, -10)
-	InfoText.Position = UDim2.new(0, 10, 0, 5)
+	InfoText.Size = UDim2.new(0.68, 0, 1, -8)
+	InfoText.Position = UDim2.new(0, 10, 0, 4)
 	InfoText.BackgroundTransparency = 1
-	InfoText.TextColor3 = Color3.fromRGB(240, 240, 240)
+	InfoText.TextColor3 = Color3.fromRGB(220, 225, 235)
 	InfoText.Font = Enum.Font.Gotham
-	InfoText.TextSize = 12
+	InfoText.TextSize = 11
 	InfoText.TextXAlignment = Enum.TextXAlignment.Left
 	InfoText.TextYAlignment = Enum.TextYAlignment.Top
 	InfoText.Text = string.format(
-		"<b>%s</b>\n🗣 Fala com: <font color='#26FF76'>%s</font>\n⚔️ Alvo: <font color='#FF5555'>%s</font> (x%d)",
+		"<b>%s</b>\nNPC: <font color='#80B5FF'>%s</font> | Alvo: <font color='#FF8080'>%s</font> (x%d)",
 		item.name, item.npcName, item.combatNpc, item.killsNeeded
 	)
 	InfoText.RichText = true
 	InfoText.Parent = Card
 
 	local SelectBtn = Instance.new("TextButton")
-	SelectBtn.Size = UDim2.new(0.26, 0, 0, 45)
-	SelectBtn.Position = UDim2.new(0.72, -5, 0.5, -22)
-	SelectBtn.BackgroundColor3 = Color3.fromRGB(38, 255, 118)
+	SelectBtn.Size = UDim2.new(0.28, 0, 0, 36)
+	SelectBtn.Position = UDim2.new(0.7, -4, 0.5, -18)
+	SelectBtn.BackgroundColor3 = Color3.fromRGB(230, 235, 245)
 	SelectBtn.Text = "SELECIONAR"
-	SelectBtn.TextColor3 = Color3.fromRGB(10, 10, 10)
+	SelectBtn.TextColor3 = Color3.fromRGB(15, 25, 45)
 	SelectBtn.Font = Enum.Font.GothamBold
-	SelectBtn.TextSize = 11
+	SelectBtn.TextSize = 10
 	SelectBtn.Parent = Card
-	Instance.new("UICorner", SelectBtn).CornerRadius = UDim.new(0, 4)
 
-	itemButtons[i] = Card
+	itemButtons[i] = {card = Card, stroke = CardStroke}
 
 	SelectBtn.MouseButton1Click:Connect(function()
 		selectedMission = item
-		for _, card in pairs(itemButtons) do
-			card.BackgroundColor3 = Color3.fromRGB(28, 28, 32)
+		for _, data in pairs(itemButtons) do
+			data.card.BackgroundColor3 = Color3.fromRGB(18, 22, 28)
+			data.stroke.Color = Color3.fromRGB(40, 50, 65)
 		end
-		Card.BackgroundColor3 = Color3.fromRGB(35, 60, 45)
+		Card.BackgroundColor3 = Color3.fromRGB(25, 45, 80)
+		CardStroke.Color = Color3.fromRGB(100, 160, 255)
 	end)
 end
 
@@ -623,13 +805,12 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
--- Botão de Ativação
 ActivateBtn.MouseButton1Click:Connect(function()
 	isRunning = not isRunning
 
 	if isRunning then
-		ActivateBtn.Text = "DESLIGAR BOT"
-		ActivateBtn.BackgroundColor3 = Color3.fromRGB(231, 76, 60)
+		ActivateBtn.Text = "DESLIGAR FARM"
+		ActivateBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
 		task.spawn(function()
 			while isRunning do
 				runMasterFarmCycle()
@@ -638,8 +819,8 @@ ActivateBtn.MouseButton1Click:Connect(function()
 			currentStatus = "Aguardando"
 		end)
 	else
-		ActivateBtn.Text = "LIGAR BOT (MISSÃO SELECIONADA)"
-		ActivateBtn.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
+		ActivateBtn.Text = "LIGAR FARM"
+		ActivateBtn.BackgroundColor3 = Color3.fromRGB(30, 90, 200)
 		setCombatState(false)
 		destroyAntiFallPlatform()
 	end
@@ -652,4 +833,4 @@ task.spawn(function()
 	end
 end)
 
-print("✅ North_. Master Multi-NPC Hub ativado com sucesso!")
+print("✅ Script e sistema de memorização de aviso carregados com sucesso!")
