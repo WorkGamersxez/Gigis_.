@@ -78,7 +78,7 @@ local NPC_LIST = {
 		killsNeeded = 1,
 	},
 	{
-		name = "Jotaro Kujo",
+		name = "Jotaro Kujo (non functional)",
 		npcName = "NGM",
 		npcPos = Vector3.new(-241, 274, 293),
 		combatNpc = "Jotaro Kujo",
@@ -87,7 +87,7 @@ local NPC_LIST = {
 }
 
 local CONFIG = {
-	TWEEN_SPEED = 120,
+	TWEEN_SPEED = 250,
 	PLAYER_BELOW = 24,
 	FLOAT_HEIGHT = 2,
 	DISTANCE_BEHIND = 2,
