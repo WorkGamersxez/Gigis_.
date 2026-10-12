@@ -1,0 +1,145 @@
+-- ============================================================================= --
+-- NORTH_. SIMPLE STANDMORPH FARM (REMOTE M1 & THUG LOCK)
+-- ============================================================================= --
+local Players = game:GetService("Players")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local camera = workspace.CurrentCamera
+local living = workspace:WaitForChild("Living")
+
+-- Limpa a interface anterior se existir
+if playerGui:FindFirstChild("NorthSimpleHub") then
+	playerGui.NorthSimpleHub:Destroy()
+end
+
+local isRunning = false
+local currentStatus = "Aguardando"
+local lastM1Time = 0
+local M1_COOLDOWN = 0.18
+
+-- Funções de utilidade
+local function getCharacterElements()
+	local char = player.Character
+	if not char then return nil, nil, nil end
+	return char, char:FindFirstChild("Humanoid"), char:FindFirstChild("HumanoidRootPart")
+end
+
+local function getStandMorph()
+	local playerModel = living:FindFirstChild(player.Name)
+	return playerModel and playerModel:FindFirstChild("StandMorph")
+end
+
+local function findThug()
+	for _, npc in ipairs(living:GetChildren()) do
+		if npc:IsA("Model") and npc.Name == "Thug" then
+			local hrp = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Torso")
+			local health = npc:FindFirstChild("Health")
+			if hrp and health and health.Value > 0 then
+				return npc, hrp
+			end
+		end
+	end
+	return nil, nil
+end
+
+-- Função para atacar usando o Remote oficial do jogo
+local function sendRemoteM1()
+	local currentTime = os.clock()
+	if currentTime - lastM1Time < M1_COOLDOWN then return end
+	lastM1Time = currentTime
+
+	local char = player.Character
+	if not char then return end
+
+	pcall(function()
+		local remoteFunction = char:FindFirstChild("RemoteFunction")
+		if remoteFunction then
+			remoteFunction:InvokeServer("Attack", "m1")
+		end
+	end)
+end
+
+-- Motor de Combate e Fixação do StandMorph
+RunService.Heartbeat:Connect(function()
+	if not isRunning then return end
+
+	local _, humanoid, hrp = getCharacterElements()
+	if not humanoid or humanoid.Health <= 0 or not hrp then return end
+
+	local stand = getStandMorph()
+	if not stand then
+		-- Pressiona Q caso o Stand não esteja invocado
+		pcall(function()
+			VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Q, false, game)
+			task.wait(0.04)
+			VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Q, false, game)
+		end)
+		return
+	end
+
+	local thugModel, thugHrp = findThug()
+	if thugModel and thugHrp then
+		currentStatus = "Atacando Thug"
+
+		-- Foco da câmera no Thug para validar o hit
+		local thugHumanoid = thugModel:FindFirstChildOfClass("Humanoid")
+		if thugHumanoid then camera.CameraSubject = thugHumanoid end
+
+		-- Trava o StandMorph exatamente atrás do Thug
+		local standRoot = stand.PrimaryPart or stand:FindFirstChild("HumanoidRootPart") or stand:FindFirstChild("Torso")
+		if standRoot then
+			local targetCFrame = thugHrp.CFrame * CFrame.new(0, 2, 3)
+			stand:PivotTo(targetCFrame)
+		end
+
+		-- Joga o corpo do jogador embaixo do chão para segurança
+		pcall(function()
+			hrp.AssemblyLinearVelocity = Vector3.zero
+			hrp.AssemblyAngularVelocity = Vector3.zero
+			hrp.CFrame = thugHrp.CFrame * CFrame.new(0, -15, 0)
+		end)
+
+		-- Dispara o M1 via RemoteFunction
+		sendRemoteM1()
+	else
+		currentStatus = "Procurando Thug..."
+	end
+end)
+
+-- ============================================================================= --
+-- INTERFACE GRÁFICA (UM SÓ BOTÃO)
+-- ============================================================================= --
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "NorthSimpleHub"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = playerGui
+
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Size = UDim2.new(0, 200, 0, 50)
+ToggleBtn.Position = UDim2.new(0, 20, 0.5, -25)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 140, 70)
+ToggleBtn.Text = "LIGAR FARM"
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBtn.Font = Enum.Font.SourceSansBold
+ToggleBtn.TextSize = 22
+ToggleBtn.Parent = ScreenGui
+
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 8)
+
+ToggleBtn.MouseButton1Click:Connect(function()
+	isRunning = not isRunning
+	if isRunning then
+		ToggleBtn.Text = "DESLIGAR FARM"
+		ToggleBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+	else
+		ToggleBtn.Text = "LIGAR FARM"
+		ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 140, 70)
+		currentStatus = "Aguardando"
+		camera.CameraSubject = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+	end
+end)
+
+print("✅ Script com Remote M1 carregado com sucesso!")
