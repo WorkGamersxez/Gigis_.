@@ -1,8 +1,10 @@
 -- ============================================================================= --
--- NORTH_. SIMPLE STANDMORPH FARM (REMOTE M1 & THUG LOCK)
+-- NORTH_. AUTO FARM - MASTER MULTI-NPC SYSTEM (2026)
 -- ============================================================================= --
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
+local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
@@ -10,17 +12,105 @@ local playerGui = player:WaitForChild("PlayerGui")
 local camera = workspace.CurrentCamera
 local living = workspace:WaitForChild("Living")
 
--- Limpa a interface anterior se existir
-if playerGui:FindFirstChild("NorthSimpleHub") then
-	playerGui.NorthSimpleHub:Destroy()
+-- Remove GUIs anteriores
+if playerGui:FindFirstChild("NorthNPCHubGui") then
+	playerGui.NorthNPCHubGui:Destroy()
 end
 
+-- ======================
+-- CONFIGURAÇÕES & LISTA DE MISSÕES
+-- ======================
+local NPC_LIST = {
+	{
+		name = "Thug (Lvl 1+)",
+		npcName = "Officer Sam [Lvl. 1+]",
+		npcPos = Vector3.new(-474, 10, -777),
+		combatNpc = "Thug",
+		killsNeeded = 5,
+	},
+	{
+		name = "Corrupt Police (Lvl 10+)",
+		npcName = "Deputy Bertrude [Lvl. 10+]",
+		npcPos = Vector3.new(-583, -26, -705),
+		combatNpc = "Corrupt Police",
+		killsNeeded = 5,
+	},
+	{
+		name = "Alpha Thug (Lvl 15+)",
+		npcName = "Abbacchio's Partner [Lvl 15+]",
+		npcPos = Vector3.new(-579, -26, -581),
+		combatNpc = "Alpha Thug",
+		killsNeeded = 5,
+	},
+	{
+		name = "Zombie Henchman (Lvl 20+)",
+		npcName = "Dracula [Lvl. 20+]",
+		npcPos = Vector3.new(-416, -33, -78),
+		combatNpc = "Zombie Henchman",
+		killsNeeded = 3,
+	},
+	{
+		name = "Vampire (Lvl 25+)",
+		npcName = "William Zeppeli [Lvl. 25+]",
+		npcPos = Vector3.new(-135, -31, 37),
+		combatNpc = "Vampire",
+		killsNeeded = 3,
+	},
+	{
+		name = "DIO Boss (Lvl 30+)",
+		npcName = "Doppio [Lvl. 30+]",
+		npcPos = Vector3.new(-40, 0, -988),
+		combatNpc = "DIO",
+		killsNeeded = 1,
+	},
+	{
+		name = "Jotaro Boss (Lvl. 35+)",
+		npcName = "DIO [Lvl. 35+]",
+		npcPos = Vector3.new(311, -26, 485),
+		combatNpc = "Jotaro",
+		killsNeeded = 1,
+	},
+	{
+		name = "Heaven Ascension DIO (Lvl. 40+)",
+		npcName = "Jotaro (Heaven)",
+		npcPos = Vector3.new(-241, 274, 293),
+		combatNpc = "Heaven Ascension DIO",
+		killsNeeded = 1,
+	},
+	{
+		name = "Jotaro Kujo",
+		npcName = "NGM",
+		npcPos = Vector3.new(-241, 274, 293),
+		combatNpc = "Jotaro Kujo",
+		killsNeeded = 1,
+	},
+}
+
+local CONFIG = {
+	TWEEN_SPEED = 120,
+	PLAYER_BELOW = 24,
+	FLOAT_HEIGHT = 2,
+	DISTANCE_BEHIND = 2,
+	M1_INTERVAL = 0.08,
+	Q_INTERVAL = 0.25,
+	SPAM_DELAY = 0.08,
+}
+
+-- ======================
+-- VARIÁVEIS DE ESTADO
+-- ======================
 local isRunning = false
 local currentStatus = "Aguardando"
-local lastM1Time = 0
-local M1_COOLDOWN = 0.18
+local selectedMission = NPC_LIST[1]
+local combatEnabled = false
+local currentNPC = nil
+local targetNpcHrp = nil
+local antiFallPlatform = nil
+local qLoopRunning = false
 
--- Funções de utilidade
+-- ======================
+-- FUNÇÕES DE LEITURA
+-- ======================
 local function getCharacterElements()
 	local char = player.Character
 	if not char then return nil, nil, nil end
@@ -29,31 +119,87 @@ end
 
 local function getStandMorph()
 	local playerModel = living:FindFirstChild(player.Name)
-	return playerModel and playerModel:FindFirstChild("StandMorph")
+	return playerModel and (playerModel:FindFirstChild("StandMorph") or playerModel:FindFirstChild("Stand"))
 end
 
-local function findThug()
-	for _, npc in ipairs(living:GetChildren()) do
-		if npc:IsA("Model") and npc.Name == "Thug" then
-			local hrp = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Torso")
-			local health = npc:FindFirstChild("Health")
-			if hrp and health and health.Value > 0 then
-				return npc, hrp
+local function getNPCHealth(npc)
+	if not npc then return nil end
+	local health = npc:FindFirstChild("Health")
+	return (health and health:IsA("DoubleConstrainedValue")) and health or nil
+end
+
+local function getNPCHRP(npc)
+	if not npc then return nil end
+	return npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Torso") or npc:FindFirstChild("UpperTorso")
+end
+
+local function isDialogueGuiActive()
+	return playerGui:FindFirstChild("DialogueGui") ~= nil or playerGui:FindFirstChild("Dialogue") ~= nil
+end
+
+local function fastWait(condition, timeout)
+	local start = os.clock()
+	while os.clock() - start < timeout do
+		if not isRunning then return false end
+		local success, result = pcall(condition)
+		if success and result then return true end
+		task.wait(0.1)
+	end
+	return false
+end
+
+-- ======================
+-- MOTOR DE RENDERIZAÇÃO & STAND LOCK
+-- ======================
+RunService.RenderStepped:Connect(function()
+	if isRunning then
+		-- Noclip constante
+		if player.Character then
+			for _, part in pairs(player.Character:GetDescendants()) do
+				if part:IsA("BasePart") then part.CanCollide = false end
+			end
+			local _, _, hrp = getCharacterElements()
+			if hrp then
+				if not antiFallPlatform or not antiFallPlatform.Parent then
+					antiFallPlatform = Instance.new("Part")
+					antiFallPlatform.Name = "NorthAntiFall"
+					antiFallPlatform.Size = Vector3.new(10, 1, 10)
+					antiFallPlatform.Anchored = true
+					antiFallPlatform.CanCollide = true
+					antiFallPlatform.Transparency = 1
+					antiFallPlatform.Parent = workspace
+				end
+				antiFallPlatform.CFrame = hrp.CFrame - Vector3.new(0, 3.5, 0)
+			end
+		end
+
+		-- Trava do Stand atrás do NPC
+		if targetNpcHrp and targetNpcHrp.Parent then
+			local stand = getStandMorph()
+			if stand and stand.PrimaryPart then
+				local targetCFrame = targetNpcHrp.CFrame * CFrame.new(0, CONFIG.FLOAT_HEIGHT, CONFIG.DISTANCE_BEHIND)
+				stand.PrimaryPart.CFrame = targetCFrame
+				stand.PrimaryPart.AssemblyLinearVelocity = Vector3.zero
+				stand.PrimaryPart.AssemblyAngularVelocity = Vector3.zero
+				stand:PivotTo(targetCFrame)
 			end
 		end
 	end
-	return nil, nil
+end)
+
+local function destroyAntiFallPlatform()
+	if antiFallPlatform then
+		antiFallPlatform:Destroy()
+		antiFallPlatform = nil
+	end
 end
 
--- Função para atacar usando o Remote oficial do jogo
-local function sendRemoteM1()
-	local currentTime = os.clock()
-	if currentTime - lastM1Time < M1_COOLDOWN then return end
-	lastM1Time = currentTime
-
+-- ======================
+-- COMBATE NATIVO (M1)
+-- ======================
+local function sendNativeM1()
 	local char = player.Character
 	if not char then return end
-
 	pcall(function()
 		local remoteFunction = char:FindFirstChild("RemoteFunction")
 		if remoteFunction then
@@ -62,84 +208,448 @@ local function sendRemoteM1()
 	end)
 end
 
--- Motor de Combate e Fixação do StandMorph
-RunService.Heartbeat:Connect(function()
-	if not isRunning then return end
-
-	local _, humanoid, hrp = getCharacterElements()
-	if not humanoid or humanoid.Health <= 0 or not hrp then return end
-
-	local stand = getStandMorph()
-	if not stand then
-		-- Pressiona Q caso o Stand não esteja invocado
-		pcall(function()
-			VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Q, false, game)
+local function startQLoop()
+	if qLoopRunning then return end
+	qLoopRunning = true
+	task.spawn(function()
+		while combatEnabled and qLoopRunning and isRunning do
+			if getStandMorph() then break end
+			pcall(function() VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Q, false, game) end)
 			task.wait(0.04)
-			VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Q, false, game)
-		end)
+			pcall(function() VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Q, false, game) end)
+			task.wait(CONFIG.Q_INTERVAL)
+		end
+		qLoopRunning = false
+	end)
+end
+
+local function returnStandToPlayer()
+	currentNPC = nil
+	targetNpcHrp = nil
+	local stand = getStandMorph()
+	local _, humanoid, hrp = getCharacterElements()
+	if stand and hrp and hrp.Parent then
+		stand:PivotTo(hrp.CFrame * CFrame.new(0, 0, 3))
+	end
+	if humanoid then camera.CameraSubject = humanoid end
+end
+
+local function setCombatState(wantEnabled)
+	if wantEnabled then
+		local _, humanoid, _ = getCharacterElements()
+		if not humanoid or humanoid.Health <= 0 then return end
+		combatEnabled = true
+		currentNPC = nil
+		if not getStandMorph() then startQLoop() end
+	else
+		combatEnabled = false
+		qLoopRunning = false
+		returnStandToPlayer()
+	end
+end
+
+local function findNearestTargetNPC()
+	local char = player.Character
+	local playerHrp = char and char:FindFirstChild("HumanoidRootPart")
+	if not playerHrp then return nil end
+
+	local closest = nil
+	local shortestDist = math.huge
+
+	for _, npc in ipairs(living:GetChildren()) do
+		if npc:IsA("Model") and string.find(string.lower(npc.Name), string.lower(selectedMission.combatNpc)) then
+			local health = getNPCHealth(npc)
+			local root = getNPCHRP(npc)
+			if health and health.Value > 0 and root then
+				local dist = (playerHrp.Position - root.Position).Magnitude
+				if dist < shortestDist then
+					shortestDist = dist
+					closest = npc
+				end
+			end
+		end
+	end
+	return closest
+end
+
+RunService.Heartbeat:Connect(function()
+	if not combatEnabled or not isRunning then return end
+	local _, humanoid, hrp = getCharacterElements()
+	if not humanoid or humanoid.Health <= 0 or not hrp or not hrp.Parent then
+		setCombatState(false)
 		return
 	end
 
-	local thugModel, thugHrp = findThug()
-	if thugModel and thugHrp then
-		currentStatus = "Atacando Thug"
+	local stand = getStandMorph()
+	if not stand then
+		currentNPC = nil
+		startQLoop()
+		return
+	end
+	qLoopRunning = false
 
-		-- Foco da câmera no Thug para validar o hit
-		local thugHumanoid = thugModel:FindFirstChildOfClass("Humanoid")
-		if thugHumanoid then camera.CameraSubject = thugHumanoid end
-
-		-- Trava o StandMorph exatamente atrás do Thug
-		local standRoot = stand.PrimaryPart or stand:FindFirstChild("HumanoidRootPart") or stand:FindFirstChild("Torso")
-		if standRoot then
-			local targetCFrame = thugHrp.CFrame * CFrame.new(0, 2, 3)
-			stand:PivotTo(targetCFrame)
+	if currentNPC then
+		local health = getNPCHealth(currentNPC)
+		local npcHrp = getNPCHRP(currentNPC)
+		if not health or health.Value <= 0 or not npcHrp or not npcHrp.Parent then
+			currentNPC = nil
 		end
+	end
 
-		-- Joga o corpo do jogador embaixo do chão para segurança
+	if not currentNPC then
+		currentNPC = findNearestTargetNPC()
+		if not currentNPC then
+			returnStandToPlayer()
+			return
+		end
+	end
+
+	local npcHrp = getNPCHRP(currentNPC)
+	if npcHrp then
+		targetNpcHrp = npcHrp
+		local npcHumanoid = currentNPC:FindFirstChildOfClass("Humanoid")
+		if npcHumanoid then camera.CameraSubject = npcHumanoid end
+
+		local playerTargetCFrame = npcHrp.CFrame - Vector3.new(0, CONFIG.PLAYER_BELOW, 0)
 		pcall(function()
 			hrp.AssemblyLinearVelocity = Vector3.zero
 			hrp.AssemblyAngularVelocity = Vector3.zero
-			hrp.CFrame = thugHrp.CFrame * CFrame.new(0, -15, 0)
+			hrp.CFrame = playerTargetCFrame
 		end)
 
-		-- Dispara o M1 via RemoteFunction
-		sendRemoteM1()
-	else
-		currentStatus = "Procurando Thug..."
+		sendNativeM1()
 	end
 end)
 
--- ============================================================================= --
--- INTERFACE GRÁFICA (UM SÓ BOTÃO)
--- ============================================================================= --
+-- ======================
+-- ROTAS DA MISSÃO
+-- ======================
+local function walkToNPC()
+	currentStatus = "Viajando até " .. selectedMission.npcName
+	setCombatState(false)
+
+	local _, _, root = getCharacterElements()
+	if not root then return false end
+
+	pcall(function() root.Anchored = false end)
+	local distance = (root.Position - selectedMission.npcPos).Magnitude
+	if distance <= 5 then return true end
+
+	local duration = distance / CONFIG.TWEEN_SPEED
+	pcall(function()
+		root.AssemblyLinearVelocity = Vector3.zero
+		root.AssemblyAngularVelocity = Vector3.zero
+	end)
+
+	local tween = TweenService:Create(root, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
+		CFrame = CFrame.new(selectedMission.npcPos + Vector3.new(0, 1.5, 0))
+	})
+
+	local finished = false
+	local connection = tween.Completed:Connect(function() finished = true end)
+	tween:Play()
+
+	local success = fastWait(function() return finished end, duration + 2)
+	connection:Disconnect()
+
+	if not success then
+		tween:Cancel()
+		return false
+	end
+
+	pcall(function() root.Anchored = true end)
+	task.wait(0.2)
+	pcall(function() root.Anchored = false end)
+	return true
+end
+
+local function triggerPrompt()
+	currentStatus = "Ativando conversa com " .. selectedMission.npcName
+	local folder = workspace:FindFirstChild("Dialogues")
+	local npc = folder and folder:FindFirstChild(selectedMission.npcName)
+	local prompt = npc and npc:FindFirstChildOfClass("ProximityPrompt")
+	if not prompt then return false end
+
+	prompt.RequiresLineOfSight = false
+	prompt.HoldDuration = 0
+
+	local ok = pcall(function() fireproximityprompt(prompt) end)
+	if not ok then
+		pcall(function()
+			prompt:InputHoldBegin()
+			task.wait(0.05)
+			prompt:InputHoldEnd()
+		end)
+	end
+	task.wait(0.4)
+	return true
+end
+
+local function clearAllDialogues()
+	currentStatus = "Aceitando Missão..."
+
+	local menuApareceu = fastWait(function() return isDialogueGuiActive() end, 3)
+	if not menuApareceu then return false end
+
+	local char = player.Character
+	local remoteEvent = char and char:FindFirstChild("RemoteEvent")
+
+	if remoteEvent then
+		pcall(function()
+			remoteEvent:FireServer("EndDialogue", {
+				["NPC"] = selectedMission.npcName,
+				["Option"] = "Option1",
+				["Dialogue"] = "Dialogue1"
+			})
+		end)
+	end
+
+	local dialogueGui = playerGui:FindFirstChild("DialogueGui") or playerGui:FindFirstChild("Dialogue")
+	if dialogueGui then
+		local attempts = 0
+		while isRunning and isDialogueGuiActive() and attempts < 15 do
+			pcall(function()
+				local frame = dialogueGui:FindFirstChild("Frame")
+				if frame then
+					local options = frame:FindFirstChild("Options")
+					local clickContinue = frame:FindFirstChild("ClickContinue")
+
+					if options and options:FindFirstChild("Option1") then
+						local btn = options.Option1:FindFirstChildOfClass("TextButton") or options.Option1
+						if firesignal then
+							firesignal(btn.MouseButton1Click)
+							firesignal(btn.Activated)
+						end
+					end
+
+					if clickContinue then
+						if firesignal then
+							firesignal(clickContinue.MouseButton1Click)
+							firesignal(clickContinue.Activated)
+						end
+					end
+				end
+			end)
+
+			attempts = attempts + 1
+			task.wait(CONFIG.SPAM_DELAY)
+		end
+	end
+
+	task.wait(0.3)
+	return true
+end
+
+local function executeHuntingFarming()
+	currentStatus = "Derrotando " .. selectedMission.combatNpc
+	setCombatState(true)
+	task.wait(1.0)
+
+	local killsDone = 0
+	while isRunning and killsDone < selectedMission.killsNeeded do
+		local target = findNearestTargetNPC()
+		if target then
+			local health = getNPCHealth(target)
+			-- Aguarda o NPC atual ser eliminado
+			while isRunning and target and target.Parent and health and health.Value > 0 do
+				task.wait(0.2)
+			end
+			killsDone = killsDone + 1
+			print(string.format("[Progresso] %s: %d / %d mortos", selectedMission.combatNpc, killsDone, selectedMission.killsNeeded))
+		else
+			task.wait(0.5)
+		end
+	end
+
+	setCombatState(false)
+	return true
+end
+
+local function runMasterFarmCycle()
+	local steps = { walkToNPC, triggerPrompt, clearAllDialogues, executeHuntingFarming }
+	for _, step in ipairs(steps) do
+		if not isRunning then return end
+		local success = step()
+		if not success then
+			warn("[Sistema] Reiniciando etapa de rota...")
+			setCombatState(false)
+			task.wait(1.5)
+			return
+		end
+	end
+end
+
+-- ======================
+-- INTERFACE GRÁFICA (GUI)
+-- ======================
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "NorthSimpleHub"
+ScreenGui.Name = "NorthNPCHubGui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = playerGui
 
-local ToggleBtn = Instance.new("TextButton")
-ToggleBtn.Size = UDim2.new(0, 200, 0, 50)
-ToggleBtn.Position = UDim2.new(0, 20, 0.5, -25)
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 140, 70)
-ToggleBtn.Text = "LIGAR FARM"
-ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleBtn.Font = Enum.Font.SourceSansBold
-ToggleBtn.TextSize = 22
-ToggleBtn.Parent = ScreenGui
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 520, 0, 420)
+MainFrame.Position = UDim2.new(0.3, 0, 0.2, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Parent = ScreenGui
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
 
-Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 8)
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Color = Color3.fromRGB(38, 255, 118)
+UIStroke.Thickness = 2
+UIStroke.Parent = MainFrame
 
-ToggleBtn.MouseButton1Click:Connect(function()
-	isRunning = not isRunning
-	if isRunning then
-		ToggleBtn.Text = "DESLIGAR FARM"
-		ToggleBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
-	else
-		ToggleBtn.Text = "LIGAR FARM"
-		ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 140, 70)
-		currentStatus = "Aguardando"
-		camera.CameraSubject = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 40)
+Header.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+Header.BorderSizePixel = 0
+Header.Parent = MainFrame
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -20, 1, 0)
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "North_. - Auto Quest & Combat Hub"
+Title.TextColor3 = Color3.fromRGB(38, 255, 118)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 15
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+local StatusText = Instance.new("TextLabel")
+StatusText.Size = UDim2.new(1, -20, 0, 25)
+StatusText.Position = UDim2.new(0, 10, 0, 45)
+StatusText.BackgroundTransparency = 1
+StatusText.Text = "Status: Aguardando"
+StatusText.TextColor3 = Color3.fromRGB(200, 255, 200)
+StatusText.Font = Enum.Font.Gotham
+StatusText.TextSize = 13
+StatusText.TextXAlignment = Enum.TextXAlignment.Left
+StatusText.Parent = MainFrame
+
+local ScrollContainer = Instance.new("ScrollingFrame")
+ScrollContainer.Size = UDim2.new(1, -20, 1, -125)
+ScrollContainer.Position = UDim2.new(0, 10, 0, 75)
+ScrollContainer.BackgroundTransparency = 1
+ScrollContainer.BorderSizePixel = 0
+ScrollContainer.ScrollBarThickness = 4
+ScrollContainer.CanvasSize = UDim2.new(0, 0, 0, #NPC_LIST * 80)
+ScrollContainer.Parent = MainFrame
+
+local UIList = Instance.new("UIListLayout")
+UIList.Padding = UDim.new(0, 8)
+UIList.Parent = ScrollContainer
+
+local ActivateBtn = Instance.new("TextButton")
+ActivateBtn.Size = UDim2.new(1, -20, 0, 38)
+ActivateBtn.Position = UDim2.new(0, 10, 1, -45)
+ActivateBtn.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
+ActivateBtn.Text = "LIGAR BOT (MISSÃO SELECIONADA)"
+ActivateBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ActivateBtn.Font = Enum.Font.GothamBold
+ActivateBtn.TextSize = 14
+ActivateBtn.Parent = MainFrame
+Instance.new("UICorner", ActivateBtn).CornerRadius = UDim.new(0, 6)
+
+local itemButtons = {}
+
+for i, item in ipairs(NPC_LIST) do
+	local Card = Instance.new("Frame")
+	Card.Size = UDim2.new(1, -8, 0, 72)
+	Card.BackgroundColor3 = (item == selectedMission) and Color3.fromRGB(35, 60, 45) or Color3.fromRGB(28, 28, 32)
+	Card.BorderSizePixel = 0
+	Card.Parent = ScrollContainer
+	Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 6)
+
+	local InfoText = Instance.new("TextLabel")
+	InfoText.Size = UDim2.new(0.7, 0, 1, -10)
+	InfoText.Position = UDim2.new(0, 10, 0, 5)
+	InfoText.BackgroundTransparency = 1
+	InfoText.TextColor3 = Color3.fromRGB(240, 240, 240)
+	InfoText.Font = Enum.Font.Gotham
+	InfoText.TextSize = 12
+	InfoText.TextXAlignment = Enum.TextXAlignment.Left
+	InfoText.TextYAlignment = Enum.TextYAlignment.Top
+	InfoText.Text = string.format(
+		"<b>%s</b>\n🗣 Fala com: <font color='#26FF76'>%s</font>\n⚔️ Alvo: <font color='#FF5555'>%s</font> (x%d)",
+		item.name, item.npcName, item.combatNpc, item.killsNeeded
+	)
+	InfoText.RichText = true
+	InfoText.Parent = Card
+
+	local SelectBtn = Instance.new("TextButton")
+	SelectBtn.Size = UDim2.new(0.26, 0, 0, 45)
+	SelectBtn.Position = UDim2.new(0.72, -5, 0.5, -22)
+	SelectBtn.BackgroundColor3 = Color3.fromRGB(38, 255, 118)
+	SelectBtn.Text = "SELECIONAR"
+	SelectBtn.TextColor3 = Color3.fromRGB(10, 10, 10)
+	SelectBtn.Font = Enum.Font.GothamBold
+	SelectBtn.TextSize = 11
+	SelectBtn.Parent = Card
+	Instance.new("UICorner", SelectBtn).CornerRadius = UDim.new(0, 4)
+
+	itemButtons[i] = Card
+
+	SelectBtn.MouseButton1Click:Connect(function()
+		selectedMission = item
+		for _, card in pairs(itemButtons) do
+			card.BackgroundColor3 = Color3.fromRGB(28, 28, 32)
+		end
+		Card.BackgroundColor3 = Color3.fromRGB(35, 60, 45)
+	end)
+end
+
+-- DragClick
+local dragging, dragStart, startPos
+Header.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = MainFrame.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then dragging = false end
+		end)
 	end
 end)
 
-print("✅ Script com Remote M1 carregado com sucesso!")
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - dragStart
+		MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+end)
+
+-- Botão de Ativação
+ActivateBtn.MouseButton1Click:Connect(function()
+	isRunning = not isRunning
+
+	if isRunning then
+		ActivateBtn.Text = "DESLIGAR BOT"
+		ActivateBtn.BackgroundColor3 = Color3.fromRGB(231, 76, 60)
+		task.spawn(function()
+			while isRunning do
+				runMasterFarmCycle()
+				task.wait(1.0)
+			end
+			currentStatus = "Aguardando"
+		end)
+	else
+		ActivateBtn.Text = "LIGAR BOT (MISSÃO SELECIONADA)"
+		ActivateBtn.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
+		setCombatState(false)
+		destroyAntiFallPlatform()
+	end
+end)
+
+task.spawn(function()
+	while ScreenGui.Parent do
+		StatusText.Text = "Status: " .. currentStatus
+		task.wait(0.2)
+	end
+end)
+
+print("✅ North_. Master Multi-NPC Hub ativado com sucesso!")
