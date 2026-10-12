@@ -1,4 +1,1070 @@
 -- ============================================================================= --
+-- NORTH_. AUTO FARM - MOBILE FIX (STAND MORPH FIXADO NO TORSO)
+-- ============================================================================= --
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local VirtualUser = game:GetService("VirtualUser")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local camera = workspace.CurrentCamera
+local living = workspace:WaitForChild("Living")
+
+local SAVE_FILE_NAME = "NorthAutoFarm_SkipWarning.txt"
+
+-- ============================================================================= --
+-- AUTO PLAY LOBBY
+-- ============================================================================= --
+local function checkAndAutoPlayLobby()
+	task.spawn(function()
+		while task.wait(0.5) do
+			local loadingScreen = playerGui:FindFirstChild("LoadingScreen")
+			if not loadingScreen then break end
+
+			local frames = loadingScreen:FindFirstChild("Frames")
+			if frames then
+				local mainFrame = frames:FindFirstChild("Main")
+				local mainPlayBtn = mainFrame and mainFrame:FindFirstChild("Play")
+
+				if mainPlayBtn and mainPlayBtn.Visible then
+					if firesignal then
+						pcall(function() firesignal(mainPlayBtn.MouseButton1Click) end)
+						pcall(function() firesignal(mainPlayBtn.Activated) end)
+					else
+						pcall(function()
+							local pos = mainPlayBtn.AbsolutePosition + (mainPlayBtn.AbsoluteSize / 2)
+							VirtualInputManager:SendMouseButtonEvent(pos.X, pos.Y, 0, true, game, 1)
+							task.wait(0.05)
+							VirtualInputManager:SendMouseButtonEvent(pos.X, pos.Y, 0, false, game, 1)
+						end)
+					end
+				end
+
+				local gamemodes = frames:FindFirstChild("Gamemodes")
+				local mainGame = gamemodes and gamemodes:FindFirstChild("MainGame")
+				local modePlayBtn = mainGame and mainGame:FindFirstChild("Play")
+
+				if modePlayBtn and modePlayBtn.Visible then
+					if firesignal then
+						pcall(function() firesignal(modePlayBtn.MouseButton1Click) end)
+						pcall(function() firesignal(modePlayBtn.Activated) end)
+					else
+						pcall(function()
+							local pos = modePlayBtn.AbsolutePosition + (modePlayBtn.AbsoluteSize / 2)
+							VirtualInputManager:SendMouseButtonEvent(pos.X, pos.Y, 0, true, game, 1)
+							task.wait(0.05)
+							VirtualInputManager:SendMouseButtonEvent(pos.X, pos.Y, 0, false, game, 1)
+						end)
+					end
+				end
+			end
+		end
+	end)
+end
+
+checkAndAutoPlayLobby()
+
+if playerGui:FindFirstChild("NorthSigilHubGui") then
+	playerGui.NorthSigilHubGui:Destroy()
+end
+if playerGui:FindFirstChild("NorthWarningGui") then
+	playerGui.NorthWarningGui:Destroy()
+end
+
+-- ============================================================================= --
+-- AVISO DE SEGURANÇA
+-- ============================================================================= --
+local shouldShowWarning = true
+
+if readfile and isfile and isfile(SAVE_FILE_NAME) then
+	pcall(function()
+		if readfile(SAVE_FILE_NAME) == "true" then
+			shouldShowWarning = false
+		end
+	end)
+end
+
+if shouldShowWarning then
+	local warningGui = Instance.new("ScreenGui")
+	warningGui.Name = "NorthWarningGui"
+	warningGui.ResetOnSpawn = false
+	warningGui.Parent = playerGui
+
+	local warningFrame = Instance.new("Frame")
+	warningFrame.Name = "WarningFrame"
+	warningFrame.Size = UDim2.new(0, 460, 0, 250)
+	warningFrame.Position = UDim2.new(0.5, -230, 0.5, -125)
+	warningFrame.BackgroundColor3 = Color3.fromRGB(15, 17, 22)
+	warningFrame.BorderSizePixel = 0
+	warningFrame.Active = true
+	warningFrame.Parent = warningGui
+
+	Instance.new("UICorner", warningFrame).CornerRadius = UDim.new(0, 8)
+
+	local warningStroke = Instance.new("UIStroke", warningFrame)
+	warningStroke.Color = Color3.fromRGB(230, 70, 70)
+	warningStroke.Thickness = 2
+
+	local warningTitle = Instance.new("TextLabel", warningFrame)
+	warningTitle.Size = UDim2.new(1, 0, 0, 40)
+	warningTitle.BackgroundTransparency = 1
+	warningTitle.Text = "⚠️ AVISO DE SEGURANÇA"
+	warningTitle.TextColor3 = Color3.fromRGB(255, 80, 80)
+	warningTitle.Font = Enum.Font.Garamond
+	warningTitle.TextSize = 50
+	warningTitle.TextScaled = true
+
+	local warningMsg = Instance.new("TextLabel", warningFrame)
+	warningMsg.Size = UDim2.new(1, -40, 0, 50)
+	warningMsg.Position = UDim2.new(0, 20, 0, 40)
+	warningMsg.BackgroundTransparency = 1
+	warningMsg.Text = "Esse script pode causar ban. Deseja continuar?"
+	warningMsg.TextColor3 = Color3.fromRGB(230, 235, 245)
+	warningMsg.Font = Enum.Font.Garamond
+	warningMsg.TextSize = 50
+	warningMsg.TextScaled = true
+	warningMsg.TextWrapped = true
+
+	local timerLabel = Instance.new("TextLabel", warningFrame)
+	timerLabel.Size = UDim2.new(1, 0, 0, 20)
+	timerLabel.Position = UDim2.new(0, 0, 0, 95)
+	timerLabel.BackgroundTransparency = 1
+	timerLabel.Text = "Tempo restante: 30s"
+	timerLabel.TextColor3 = Color3.fromRGB(150, 160, 180)
+	timerLabel.Font = Enum.Font.Garamond
+	timerLabel.TextSize = 50
+	timerLabel.TextScaled = true
+
+	local continueBtn = Instance.new("TextButton", warningFrame)
+	continueBtn.Size = UDim2.new(0, 410, 0, 32)
+	continueBtn.Position = UDim2.new(0, 25, 0, 125)
+	continueBtn.BackgroundColor3 = Color3.fromRGB(30, 140, 70)
+	continueBtn.Text = "CONTINUAR"
+	continueBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	continueBtn.Font = Enum.Font.Garamond
+	continueBtn.TextSize = 50
+	continueBtn.TextScaled = true
+	Instance.new("UICorner", continueBtn).CornerRadius = UDim.new(0, 5)
+
+	local dontShowBtn = Instance.new("TextButton", warningFrame)
+	dontShowBtn.Size = UDim2.new(0, 410, 0, 32)
+	dontShowBtn.Position = UDim2.new(0, 25, 0, 163)
+	dontShowBtn.BackgroundColor3 = Color3.fromRGB(30, 90, 180)
+	dontShowBtn.Text = "CONTINUAR (NUNCA MAIS MOSTRAR ESTA MENSAGEM)"
+	dontShowBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	dontShowBtn.Font = Enum.Font.Garamond
+	dontShowBtn.TextSize = 50
+	dontShowBtn.TextScaled = true
+	Instance.new("UICorner", dontShowBtn).CornerRadius = UDim.new(0, 5)
+
+	local closeBtn = Instance.new("TextButton", warningFrame)
+	closeBtn.Size = UDim2.new(0, 410, 0, 32)
+	closeBtn.Position = UDim2.new(0, 25, 0, 201)
+	closeBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+	closeBtn.Text = "FECHAR SCRIPT"
+	closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	closeBtn.Font = Enum.Font.Garamond
+	closeBtn.TextSize = 50
+	closeBtn.TextScaled = true
+	Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 5)
+
+	local userDecision = nil
+
+	continueBtn.MouseButton1Click:Connect(function() userDecision = "continue" end)
+	dontShowBtn.MouseButton1Click:Connect(function()
+		userDecision = "never_show"
+		if writefile then pcall(function() writefile(SAVE_FILE_NAME, "true") end) end
+	end)
+	closeBtn.MouseButton1Click:Connect(function() userDecision = "close" end)
+
+	task.spawn(function()
+		local timeLeft = 30
+		while timeLeft > 0 and userDecision == nil do
+			timerLabel.Text = "Tempo restante: " .. tostring(timeLeft) .. "s"
+			task.wait(1)
+			timeLeft = timeLeft - 1
+		end
+		if userDecision == nil then userDecision = "close" end
+	end)
+
+	while userDecision == nil do task.wait(0.1) end
+	warningGui:Destroy()
+
+	if userDecision == "close" then
+		warn("❌ Execução cancelada pelo usuário ou por tempo limite.")
+		return
+	end
+end
+
+-- ============================================================================= --
+-- LÓGICA PRINCIPAL
+-- ============================================================================= --
+player.Idled:Connect(function()
+	VirtualUser:CaptureController()
+	VirtualUser:ClickButton2(Vector2.new(0, 0))
+end)
+
+local AVAILABLE_ITEMS = {
+	"Mysterious Arrow",
+	"Rokakaka",
+	"Pure Rokakaka",
+	"Rib Cage of the Saint's Corpse",
+	"Coin",
+	"Diamond",
+	"Ancient Scroll",
+	"Quinton's Glove",
+	"Steel Ball",
+	"Zepellin's Headband",
+	"Deo's Diary",
+	"Stone Mask",
+}
+
+local NPC_LIST = {
+	{
+		name = "Thug (Lvl 1+)",
+		npcName = "Officer Sam [Lvl. 1+]",
+		npcPos = Vector3.new(-474, 10, -777),
+		combatNpc = "Thug",
+		killsNeeded = 5,
+	},
+	{
+		name = "Corrupt Police (Lvl 10+)",
+		npcName = "Deputy Bertrude [Lvl. 10+]",
+		npcPos = Vector3.new(-583, -26, -705),
+		combatNpc = "Corrupt Police",
+		killsNeeded = 5,
+	},
+	{
+		name = "Alpha Thug (Lvl 15+)",
+		npcName = "Abbacchio's Partner [Lvl 15+]",
+		npcPos = Vector3.new(-579, -26, -581),
+		combatNpc = "Alpha Thug",
+		killsNeeded = 5,
+	},
+	{
+		name = "Zombie Henchman (Lvl 20+)",
+		npcName = "Dracula [Lvl. 20+]",
+		npcPos = Vector3.new(-416, -33, -78),
+		combatNpc = "Zombie Henchman",
+		killsNeeded = 3,
+	},
+	{
+		name = "Vampire (Lvl 25+)",
+		npcName = "William Zeppeli [Lvl. 25+]",
+		npcPos = Vector3.new(-135, -31, 37),
+		combatNpc = "Vampire",
+		killsNeeded = 3,
+	},
+	{
+		name = "DIO Boss (Lvl 30+)",
+		npcName = "Doppio [Lvl. 30+]",
+		npcPos = Vector3.new(-40, 0, -988),
+		combatNpc = "DIO",
+		killsNeeded = 1,
+	},
+	{
+		name = "Jotaro Boss (Lvl. 35+)",
+		npcName = "DIO [Lvl. 35+]",
+		npcPos = Vector3.new(311, -26, 485),
+		combatNpc = "Jotaro",
+		killsNeeded = 1,
+	},
+	{
+		name = "Heaven Ascension DIO (Lvl. 40+)",
+		npcName = "Jotaro (Heaven)",
+		npcPos = Vector3.new(-241, 274, 293),
+		combatNpc = "Heaven Ascension DIO",
+		killsNeeded = 1,
+	},
+	{
+		name = "Jotaro Kujo",
+		npcName = "NGM",
+		npcPos = Vector3.new(-241, 274, 293),
+		combatNpc = "Jotaro Kujo",
+		killsNeeded = 1,
+	},
+}
+
+local CONFIG = {
+	TWEEN_SPEED = 120,
+	PLAYER_BELOW = 24,
+	FLOAT_HEIGHT = 2,
+	DISTANCE_BEHIND = 2,
+	M1_INTERVAL = 0.08,
+	Q_INTERVAL = 0.25,
+	SPAM_DELAY = 0.08,
+}
+
+local isRunning = false
+local isItemFarming = false
+local currentStatus = "Aguardando"
+local selectedMission = NPC_LIST[1]
+local selectedItems = {}
+local combatEnabled = false
+local currentNPC = nil
+local targetNpcHrp = nil
+local antiFallPlatform = nil
+local qLoopRunning = false
+
+local function getCharacterElements()
+	local char = player.Character
+	if not char then return nil, nil, nil end
+	return char, char:FindFirstChild("Humanoid"), char:FindFirstChild("HumanoidRootPart")
+end
+
+local function getStandMorph()
+	local playerModel = living:FindFirstChild(player.Name)
+	return playerModel and (playerModel:FindFirstChild("StandMorph") or playerModel:FindFirstChild("Stand"))
+end
+
+local function getNPCHealth(npc)
+	if not npc then return nil end
+	local health = npc:FindFirstChild("Health")
+	return (health and health:IsA("DoubleConstrainedValue")) and health or nil
+end
+
+local function getNPCHRP(npc)
+	if not npc then return nil end
+	return npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Torso") or npc:FindFirstChild("UpperTorso")
+end
+
+local function isDialogueGuiActive()
+	return playerGui:FindFirstChild("DialogueGui") ~= nil or playerGui:FindFirstChild("Dialogue") ~= nil
+end
+
+local function fastWait(condition, timeout)
+	local start = os.clock()
+	while os.clock() - start < timeout do
+		if not isRunning and not isItemFarming then return false end
+		local success, result = pcall(condition)
+		if success and result then return true end
+		task.wait(0.1)
+	end
+	return false
+end
+
+local function interactViaRemote(prompt)
+	local char = player.Character
+	local remoteEvent = char and char:FindFirstChild("RemoteEvent")
+	
+	if remoteEvent then
+		pcall(function()
+			remoteEvent:FireServer("Interact", prompt)
+		end)
+	end
+
+	if prompt then
+		prompt.RequiresLineOfSight = false
+		prompt.HoldDuration = 0
+		pcall(function() fireproximityprompt(prompt) end)
+	end
+end
+
+local function isItemSelected(itemName)
+	local count = 0
+	for _ in pairs(selectedItems) do count = count + 1 end
+	if count == 0 then return true end
+	
+	for name, enabled in pairs(selectedItems) do
+		if enabled and string.find(string.lower(itemName), string.lower(name)) then
+			return true
+		end
+	end
+	return false
+end
+
+local function runItemFarmCycle()
+	currentStatus = "Procurando Itens..."
+
+	for _, prompt in ipairs(workspace:GetDescendants()) do
+		if not isItemFarming then break end
+
+		if prompt:IsA("ProximityPrompt") then
+			local objectTextName = prompt.ObjectText
+			local parentName = prompt.Parent and prompt.Parent.Name or ""
+
+			if (objectTextName ~= "" and isItemSelected(objectTextName)) or isItemSelected(parentName) then
+				local targetPart = prompt.Parent:IsA("BasePart") and prompt.Parent or prompt.Parent:FindFirstChildOfClass("BasePart")
+				local _, _, playerHrp = getCharacterElements()
+
+				if targetPart and playerHrp then
+					local itemDisplayName = (objectTextName ~= "") and objectTextName or parentName
+					currentStatus = "Coletando: " .. itemDisplayName
+					
+					playerHrp.CFrame = targetPart.CFrame * CFrame.new(0, 2, 0)
+					task.wait(0.2)
+
+					interactViaRemote(prompt)
+					task.wait(0.4)
+				end
+			end
+		end
+	end
+end
+
+-- ============================================================================= --
+-- RENDERSTEPPED: TRAVA STAND MORPH ATRÁS DO TORSO (MOBILE FIX)
+-- ============================================================================= --
+RunService.RenderStepped:Connect(function()
+	if isRunning then
+		-- Desativa colisões do jogador
+		if player.Character then
+			for _, part in pairs(player.Character:GetDescendants()) do
+				if part:IsA("BasePart") then part.CanCollide = false end
+			end
+			local _, _, hrp = getCharacterElements()
+			if hrp then
+				if not antiFallPlatform or not antiFallPlatform.Parent then
+					antiFallPlatform = Instance.new("Part")
+					antiFallPlatform.Name = "NorthAntiFall"
+					antiFallPlatform.Size = Vector3.new(10, 1, 10)
+					antiFallPlatform.Anchored = true
+					antiFallPlatform.CanCollide = true
+					antiFallPlatform.Transparency = 1
+					antiFallPlatform.Parent = workspace
+				end
+				antiFallPlatform.CFrame = hrp.CFrame - Vector3.new(0, 3.5, 0)
+			end
+		end
+
+		-- Fixação do Stand Morph no Mob (Previne saída ao clicar no Mobile)
+		if targetNpcHrp and targetNpcHrp.Parent then
+			local stand = getStandMorph()
+			if stand then
+				local standRoot = stand.PrimaryPart or stand:FindFirstChild("HumanoidRootPart") or stand:FindFirstChild("Torso")
+				local npcTorso = targetNpcHrp.Parent:FindFirstChild("Torso") 
+					or targetNpcHrp.Parent:FindFirstChild("UpperTorso") 
+					or targetNpcHrp
+
+				if standRoot and npcTorso then
+					-- Desativa física e força o posicionamento absoluto
+					pcall(function()
+						for _, p in ipairs(stand:GetDescendants()) do
+							if p:IsA("BasePart") then
+								p.CanCollide = false
+								p.AssemblyLinearVelocity = Vector3.zero
+								p.AssemblyAngularVelocity = Vector3.zero
+							end
+						end
+						
+						-- CFrame posicionado diretamente atrás do Torso do NPC
+						local targetCFrame = npcTorso.CFrame * CFrame.new(0, 0, CONFIG.DISTANCE_BEHIND)
+						
+						-- PivotTo + CFrame direto na RootPart para evitar atraso de renderização no mobile
+						standRoot.CFrame = targetCFrame
+						stand:PivotTo(targetCFrame)
+					end)
+				end
+			end
+		end
+	end
+end)
+
+local function destroyAntiFallPlatform()
+	if antiFallPlatform then
+		antiFallPlatform:Destroy()
+		antiFallPlatform = nil
+	end
+end
+
+local function sendNativeM1()
+	local char = player.Character
+	if not char then return end
+	pcall(function()
+		local remoteFunction = char:FindFirstChild("RemoteFunction")
+		if remoteFunction then
+			remoteFunction:InvokeServer("Attack", "m1")
+		end
+	end)
+end
+
+local function startQLoop()
+	if qLoopRunning then return end
+	qLoopRunning = true
+	task.spawn(function()
+		while combatEnabled and qLoopRunning and isRunning do
+			if getStandMorph() then break end
+			pcall(function() VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Q, false, game) end)
+			task.wait(0.04)
+			pcall(function() VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Q, false, game) end)
+			task.wait(CONFIG.Q_INTERVAL)
+		end
+		qLoopRunning = false
+	end)
+end
+
+local function returnStandToPlayer()
+	currentNPC = nil
+	targetNpcHrp = nil
+	local stand = getStandMorph()
+	local _, humanoid, hrp = getCharacterElements()
+	if stand and hrp and hrp.Parent then
+		pcall(function()
+			local standRoot = stand.PrimaryPart or stand:FindFirstChild("HumanoidRootPart") or stand:FindFirstChild("Torso")
+			if standRoot then
+				standRoot.CFrame = hrp.CFrame * CFrame.new(0, 0, 3)
+			end
+			stand:PivotTo(hrp.CFrame * CFrame.new(0, 0, 3))
+		end)
+	end
+	if humanoid then camera.CameraSubject = humanoid end
+end
+
+local function setCombatState(wantEnabled)
+	if wantEnabled then
+		local _, humanoid, _ = getCharacterElements()
+		if not humanoid or humanoid.Health <= 0 then return end
+		combatEnabled = true
+		currentNPC = nil
+		if not getStandMorph() then startQLoop() end
+	else
+		combatEnabled = false
+		qLoopRunning = false
+		returnStandToPlayer()
+	end
+end
+
+local function findNearestTargetNPC()
+	local char = player.Character
+	local playerHrp = char and char:FindFirstChild("HumanoidRootPart")
+	if not playerHrp then return nil end
+
+	local closest = nil
+	local shortestDist = math.huge
+	local targetName = selectedMission.combatNpc
+
+	for _, npc in ipairs(living:GetChildren()) do
+		if npc:IsA("Model") then
+			local matchFound = false
+			if npc.Name == targetName then matchFound = true
+			elseif targetName == "Jotaro" and npc.Name == "Jotaro" then matchFound = true
+			elseif targetName == "DIO" and npc.Name == "DIO" then matchFound = true
+			elseif string.lower(npc.Name) == string.lower(targetName) then matchFound = true end
+
+			if matchFound then
+				local health = getNPCHealth(npc)
+				local root = getNPCHRP(npc)
+				if health and health.Value > 0 and root then
+					local dist = (playerHrp.Position - root.Position).Magnitude
+					if dist < shortestDist then
+						shortestDist = dist
+						closest = npc
+					end
+				end
+			end
+		end
+	end
+	return closest
+end
+
+RunService.Heartbeat:Connect(function()
+	if not combatEnabled or not isRunning then return end
+	local _, humanoid, hrp = getCharacterElements()
+	if not humanoid or humanoid.Health <= 0 or not hrp or not hrp.Parent then
+		setCombatState(false)
+		return
+	end
+
+	local stand = getStandMorph()
+	if not stand then
+		currentNPC = nil
+		startQLoop()
+		return
+	end
+	qLoopRunning = false
+
+	if currentNPC then
+		local health = getNPCHealth(currentNPC)
+		local npcHrp = getNPCHRP(currentNPC)
+		if not health or health.Value <= 0 or not npcHrp or not npcHrp.Parent then
+			currentNPC = nil
+		end
+	end
+
+	if not currentNPC then
+		currentNPC = findNearestTargetNPC()
+		if not currentNPC then
+			returnStandToPlayer()
+			return
+		end
+	end
+
+	local npcHrp = getNPCHRP(currentNPC)
+	if npcHrp then
+		targetNpcHrp = npcHrp
+		local playerTargetCFrame = npcHrp.CFrame - Vector3.new(0, CONFIG.PLAYER_BELOW, 0)
+		pcall(function()
+			hrp.AssemblyLinearVelocity = Vector3.zero
+			hrp.AssemblyAngularVelocity = Vector3.zero
+			hrp.CFrame = playerTargetCFrame
+		end)
+		sendNativeM1()
+	end
+end)
+
+local function walkToNPC()
+	currentStatus = "Viajando: " .. selectedMission.npcName
+	setCombatState(false)
+
+	local _, _, root = getCharacterElements()
+	if not root then return false end
+
+	pcall(function() root.Anchored = false end)
+	local distance = (root.Position - selectedMission.npcPos).Magnitude
+	if distance <= 5 then return true end
+
+	local duration = distance / CONFIG.TWEEN_SPEED
+	pcall(function()
+		root.AssemblyLinearVelocity = Vector3.zero
+		root.AssemblyAngularVelocity = Vector3.zero
+	end)
+
+	local tween = TweenService:Create(root, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
+		CFrame = CFrame.new(selectedMission.npcPos + Vector3.new(0, 1.5, 0))
+	})
+
+	local finished = false
+	local connection = tween.Completed:Connect(function() finished = true end)
+	tween:Play()
+
+	local success = fastWait(function() return finished end, duration + 2)
+	connection:Disconnect()
+
+	if not success then
+		tween:Cancel()
+		return false
+	end
+
+	pcall(function() root.Anchored = true end)
+	task.wait(0.2)
+	pcall(function() root.Anchored = false end)
+	return true
+end
+
+local function triggerPrompt()
+	currentStatus = "Falando com: " .. selectedMission.npcName
+	local folder = workspace:FindFirstChild("Dialogues")
+	local npc = folder and folder:FindFirstChild(selectedMission.npcName)
+	local prompt = npc and npc:FindFirstChildOfClass("ProximityPrompt")
+	if not prompt then return false end
+
+	interactViaRemote(prompt)
+	task.wait(0.4)
+	return true
+end
+
+local function clearAllDialogues()
+	currentStatus = "Aceitando..."
+
+	local menuApareceu = fastWait(function() return isDialogueGuiActive() end, 3)
+	if not menuApareceu then return false end
+
+	local char = player.Character
+	local remoteEvent = char and char:FindFirstChild("RemoteEvent")
+
+	if remoteEvent then
+		pcall(function()
+			remoteEvent:FireServer("EndDialogue", {
+				["NPC"] = selectedMission.npcName,
+				["Option"] = "Option1",
+				["Dialogue"] = "Dialogue1"
+			})
+		end)
+	end
+
+	local dialogueGui = playerGui:FindFirstChild("DialogueGui") or playerGui:FindFirstChild("Dialogue")
+	if dialogueGui then
+		local attempts = 0
+		while isRunning and isDialogueGuiActive() and attempts < 15 do
+			pcall(function()
+				local frame = dialogueGui:FindFirstChild("Frame")
+				if frame then
+					local options = frame:FindFirstChild("Options")
+					local clickContinue = frame:FindFirstChild("ClickContinue")
+
+					if options and options:FindFirstChild("Option1") then
+						local btn = options.Option1:FindFirstChildOfClass("TextButton") or options.Option1
+						if firesignal then
+							firesignal(btn.MouseButton1Click)
+							firesignal(btn.Activated)
+						end
+					end
+
+					if clickContinue then
+						if firesignal then
+							firesignal(clickContinue.MouseButton1Click)
+							firesignal(clickContinue.Activated)
+						end
+					end
+				end
+			end)
+
+			attempts = attempts + 1
+			task.wait(CONFIG.SPAM_DELAY)
+		end
+	end
+
+	task.wait(0.3)
+	return true
+end
+
+local function executeHuntingFarming()
+	currentStatus = "Caçando: " .. selectedMission.combatNpc
+	setCombatState(true)
+	task.wait(1.0)
+
+	local killsDone = 0
+	while isRunning and killsDone < selectedMission.killsNeeded do
+		local target = findNearestTargetNPC()
+		if target then
+			local health = getNPCHealth(target)
+			while isRunning and target and target.Parent and health and health.Value > 0 do
+				task.wait(0.2)
+			end
+			killsDone = killsDone + 1
+		else
+			task.wait(0.5)
+		end
+	end
+
+	task.wait(0.2)
+	setCombatState(false)
+	return true
+end
+
+local function runMasterFarmCycle()
+	local steps = { walkToNPC, triggerPrompt, clearAllDialogues, executeHuntingFarming }
+	for _, step in ipairs(steps) do
+		if not isRunning then return end
+		local success = step()
+		if not success then
+			setCombatState(false)
+			task.wait(1.5)
+			return
+		end
+	end
+end
+
+-- ============================================================================= --
+-- INTERFACE GRÁFICA (GARAMOND / TEXTSIZE 50)
+-- ============================================================================= --
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "NorthSigilHubGui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = playerGui
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 520, 0, 420)
+MainFrame.Position = UDim2.new(0.3, 0, 0.2, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(12, 14, 18)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Parent = ScreenGui
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(220, 230, 245)
+MainStroke.Thickness = 2
+MainStroke.Parent = MainFrame
+
+local SideBar = Instance.new("Frame")
+SideBar.Name = "SideBar"
+SideBar.Size = UDim2.new(0, 60, 1, 0)
+SideBar.Position = UDim2.new(0, 0, 0, 0)
+SideBar.BackgroundColor3 = Color3.fromRGB(235, 240, 250)
+SideBar.BorderSizePixel = 0
+SideBar.ClipsDescendants = true
+SideBar.Parent = MainFrame
+
+local SideTitle = Instance.new("TextLabel")
+SideTitle.Name = "SideTitle"
+SideTitle.Size = UDim2.new(1, 0, 1, 0)
+SideTitle.BackgroundTransparency = 1
+SideTitle.Text = "NORTH SIDE"
+SideTitle.TextColor3 = Color3.fromRGB(25, 75, 160)
+SideTitle.Font = Enum.Font.Garamond
+SideTitle.TextSize = 50
+SideTitle.TextScaled = true
+SideTitle.Rotation = -90
+SideTitle.Parent = SideBar
+
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Size = UDim2.new(1, -60, 1, 0)
+ContentFrame.Position = UDim2.new(0, 60, 0, 0)
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Parent = MainFrame
+
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 45)
+Header.BackgroundColor3 = Color3.fromRGB(18, 22, 30)
+Header.BorderSizePixel = 0
+Header.Parent = ContentFrame
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, -15, 0, 22)
+TitleLabel.Position = UDim2.new(0, 15, 0, 3)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "NORTH_. AUTO FARM & ITEM HUB"
+TitleLabel.TextColor3 = Color3.fromRGB(240, 245, 255)
+TitleLabel.Font = Enum.Font.Garamond
+TitleLabel.TextSize = 50
+TitleLabel.TextScaled = true
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = Header
+
+local StatusText = Instance.new("TextLabel")
+StatusText.Size = UDim2.new(1, -15, 0, 18)
+StatusText.Position = UDim2.new(0, 15, 0, 23)
+StatusText.BackgroundTransparency = 1
+StatusText.Text = "Status: Aguardando"
+StatusText.TextColor3 = Color3.fromRGB(110, 160, 235)
+StatusText.Font = Enum.Font.Garamond
+StatusText.TextSize = 50
+StatusText.TextScaled = true
+StatusText.TextXAlignment = Enum.TextXAlignment.Left
+StatusText.Parent = Header
+
+local TabFrame = Instance.new("Frame", ContentFrame)
+TabFrame.Size = UDim2.new(1, -20, 0, 28)
+TabFrame.Position = UDim2.new(0, 10, 0, 48)
+TabFrame.BackgroundTransparency = 1
+
+local QuestsTabBtn = Instance.new("TextButton", TabFrame)
+QuestsTabBtn.Size = UDim2.new(0.48, 0, 1, 0)
+QuestsTabBtn.BackgroundColor3 = Color3.fromRGB(30, 90, 200)
+QuestsTabBtn.Text = "AUTO QUESTS"
+QuestsTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+QuestsTabBtn.Font = Enum.Font.Garamond
+QuestsTabBtn.TextSize = 50
+QuestsTabBtn.TextScaled = true
+
+local ItemsTabBtn = Instance.new("TextButton", TabFrame)
+ItemsTabBtn.Size = UDim2.new(0.48, 0, 1, 0)
+ItemsTabBtn.Position = UDim2.new(0.52, 0, 0, 0)
+ItemsTabBtn.BackgroundColor3 = Color3.fromRGB(20, 25, 35)
+ItemsTabBtn.Text = "AUTO FARM ITEMS"
+ItemsTabBtn.TextColor3 = Color3.fromRGB(180, 190, 210)
+ItemsTabBtn.Font = Enum.Font.Garamond
+ItemsTabBtn.TextSize = 50
+ItemsTabBtn.TextScaled = true
+
+local QuestsContainer = Instance.new("ScrollingFrame", ContentFrame)
+QuestsContainer.Size = UDim2.new(1, -20, 1, -130)
+QuestsContainer.Position = UDim2.new(0, 10, 0, 80)
+QuestsContainer.BackgroundTransparency = 1
+QuestsContainer.BorderSizePixel = 0
+QuestsContainer.ScrollBarThickness = 3
+QuestsContainer.CanvasSize = UDim2.new(0, 0, 0, #NPC_LIST * 68)
+
+local QuestsUIList = Instance.new("UIListLayout", QuestsContainer)
+QuestsUIList.Padding = UDim.new(0, 6)
+
+local ItemsContainer = Instance.new("ScrollingFrame", ContentFrame)
+ItemsContainer.Size = UDim2.new(1, -20, 1, -130)
+ItemsContainer.Position = UDim2.new(0, 10, 0, 80)
+ItemsContainer.BackgroundTransparency = 1
+ItemsContainer.BorderSizePixel = 0
+ItemsContainer.Visible = false
+ItemsContainer.ScrollBarThickness = 3
+ItemsContainer.CanvasSize = UDim2.new(0, 0, 0, #AVAILABLE_ITEMS * 40)
+
+local ItemsUIList = Instance.new("UIListLayout", ItemsContainer)
+ItemsUIList.Padding = UDim.new(0, 5)
+
+local ActivateQuestBtn = Instance.new("TextButton", ContentFrame)
+ActivateQuestBtn.Size = UDim2.new(0.48, 0, 0, 36)
+ActivateQuestBtn.Position = UDim2.new(0, 10, 1, -42)
+ActivateQuestBtn.BackgroundColor3 = Color3.fromRGB(30, 90, 200)
+ActivateQuestBtn.Text = "LIGAR QUESTS"
+ActivateQuestBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ActivateQuestBtn.Font = Enum.Font.Garamond
+ActivateQuestBtn.TextSize = 50
+ActivateQuestBtn.TextScaled = true
+
+local ActivateItemBtn = Instance.new("TextButton", ContentFrame)
+ActivateItemBtn.Size = UDim2.new(0.48, 0, 0, 36)
+ActivateItemBtn.Position = UDim2.new(0.52, 0, 1, -42)
+ActivateItemBtn.BackgroundColor3 = Color3.fromRGB(30, 140, 70)
+ActivateItemBtn.Text = "LIGAR FARM ITEMS"
+ActivateItemBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ActivateItemBtn.Font = Enum.Font.Garamond
+ActivateItemBtn.TextSize = 50
+ActivateItemBtn.TextScaled = true
+
+QuestsTabBtn.MouseButton1Click:Connect(function()
+	QuestsContainer.Visible = true
+	ItemsContainer.Visible = false
+	QuestsTabBtn.BackgroundColor3 = Color3.fromRGB(30, 90, 200)
+	QuestsTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	ItemsTabBtn.BackgroundColor3 = Color3.fromRGB(20, 25, 35)
+	ItemsTabBtn.TextColor3 = Color3.fromRGB(180, 190, 210)
+end)
+
+ItemsTabBtn.MouseButton1Click:Connect(function()
+	QuestsContainer.Visible = false
+	ItemsContainer.Visible = true
+	ItemsTabBtn.BackgroundColor3 = Color3.fromRGB(30, 90, 200)
+	ItemsTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	QuestsTabBtn.BackgroundColor3 = Color3.fromRGB(20, 25, 35)
+	QuestsTabBtn.TextColor3 = Color3.fromRGB(180, 190, 210)
+end)
+
+local itemButtons = {}
+for i, item in ipairs(NPC_LIST) do
+	local Card = Instance.new("Frame", QuestsContainer)
+	Card.Size = UDim2.new(1, -6, 0, 62)
+	Card.BackgroundColor3 = (item == selectedMission) and Color3.fromRGB(25, 45, 80) or Color3.fromRGB(18, 22, 28)
+
+	local CardStroke = Instance.new("UIStroke", Card)
+	CardStroke.Color = (item == selectedMission) and Color3.fromRGB(100, 160, 255) or Color3.fromRGB(40, 50, 65)
+
+	local InfoText = Instance.new("TextLabel", Card)
+	InfoText.Size = UDim2.new(0.68, 0, 1, -8)
+	InfoText.Position = UDim2.new(0, 10, 0, 4)
+	InfoText.BackgroundTransparency = 1
+	InfoText.TextColor3 = Color3.fromRGB(220, 225, 235)
+	InfoText.Font = Enum.Font.Garamond
+	InfoText.TextSize = 50
+	InfoText.TextScaled = true
+	InfoText.TextXAlignment = Enum.TextXAlignment.Left
+	InfoText.TextYAlignment = Enum.TextYAlignment.Top
+	InfoText.RichText = true
+	InfoText.Text = string.format("<b>%s</b>\nNPC: <font color='#80B5FF'>%s</font> | Alvo: <font color='#FF8080'>%s</font> (x%d)", item.name, item.npcName, item.combatNpc, item.killsNeeded)
+
+	local SelectBtn = Instance.new("TextButton", Card)
+	SelectBtn.Size = UDim2.new(0.28, 0, 0, 36)
+	SelectBtn.Position = UDim2.new(0.7, -4, 0.5, -18)
+	SelectBtn.BackgroundColor3 = Color3.fromRGB(230, 235, 245)
+	SelectBtn.Text = "SELECIONAR"
+	SelectBtn.TextColor3 = Color3.fromRGB(15, 25, 45)
+	SelectBtn.Font = Enum.Font.Garamond
+	SelectBtn.TextSize = 50
+	SelectBtn.TextScaled = true
+
+	itemButtons[i] = {card = Card, stroke = CardStroke}
+
+	SelectBtn.MouseButton1Click:Connect(function()
+		selectedMission = item
+		for _, data in pairs(itemButtons) do
+			data.card.BackgroundColor3 = Color3.fromRGB(18, 22, 28)
+			data.stroke.Color = Color3.fromRGB(40, 50, 65)
+		end
+		Card.BackgroundColor3 = Color3.fromRGB(25, 45, 80)
+		CardStroke.Color = Color3.fromRGB(100, 160, 255)
+	end)
+end
+
+for _, itemName in ipairs(AVAILABLE_ITEMS) do
+	local ItemCard = Instance.new("Frame", ItemsContainer)
+	ItemCard.Size = UDim2.new(1, -6, 0, 35)
+	ItemCard.BackgroundColor3 = Color3.fromRGB(18, 22, 28)
+
+	local ItemStroke = Instance.new("UIStroke", ItemCard)
+	ItemStroke.Color = Color3.fromRGB(40, 50, 65)
+
+	local ItemLabel = Instance.new("TextLabel", ItemCard)
+	ItemLabel.Size = UDim2.new(0.7, 0, 1, 0)
+	ItemLabel.Position = UDim2.new(0, 10, 0, 0)
+	ItemLabel.BackgroundTransparency = 1
+	ItemLabel.Text = itemName
+	ItemLabel.TextColor3 = Color3.fromRGB(220, 225, 235)
+	ItemLabel.Font = Enum.Font.Garamond
+	ItemLabel.TextSize = 50
+	ItemLabel.TextScaled = true
+	ItemLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+	local ToggleBtn = Instance.new("TextButton", ItemCard)
+	ToggleBtn.Size = UDim2.new(0.25, 0, 0, 25)
+	ToggleBtn.Position = UDim2.new(0.73, 0, 0.5, -12)
+	ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 45, 55)
+	ToggleBtn.Text = "PEGAR"
+	ToggleBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+	ToggleBtn.Font = Enum.Font.Garamond
+	ToggleBtn.TextSize = 50
+	ToggleBtn.TextScaled = true
+
+	ToggleBtn.MouseButton1Click:Connect(function()
+		selectedItems[itemName] = not selectedItems[itemName]
+		if selectedItems[itemName] then
+			ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 140, 70)
+			ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+			ItemCard.BackgroundColor3 = Color3.fromRGB(20, 40, 30)
+		else
+			ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 45, 55)
+			ToggleBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+			ItemCard.BackgroundColor3 = Color3.fromRGB(18, 22, 28)
+		end
+	end)
+end
+
+local dragging, dragStart, startPos
+Header.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = MainFrame.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then dragging = false end
+		end)
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - dragStart
+		MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+end)
+
+ActivateQuestBtn.MouseButton1Click:Connect(function()
+	isRunning = not isRunning
+	if isRunning then
+		ActivateQuestBtn.Text = "PARAR QUESTS"
+		ActivateQuestBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+		task.spawn(function()
+			while isRunning do
+				runMasterFarmCycle()
+				task.wait(1.0)
+			end
+			currentStatus = "Aguardando"
+		end)
+	else
+		ActivateQuestBtn.Text = "LIGAR QUESTS"
+		ActivateQuestBtn.BackgroundColor3 = Color3.fromRGB(30, 90, 200)
+		setCombatState(false)
+		destroyAntiFallPlatform()
+	end
+end)
+
+ActivateItemBtn.MouseButton1Click:Connect(function()
+	isItemFarming = not isItemFarming
+	if isItemFarming then
+		ActivateItemBtn.Text = "PARAR ITENS"
+		ActivateItemBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+		task.spawn(function()
+			while isItemFarming do
+				runItemFarmCycle()
+				task.wait(2.0)
+			end
+			currentStatus = "Aguardando"
+		end)
+	else
+		ActivateItemBtn.Text = "LIGAR FARM ITENS"
+		ActivateItemBtn.BackgroundColor3 = Color3.fromRGB(30, 140, 70)
+	end
+end)
+
+task.spawn(function()
+	while ScreenGui.Parent do
+		StatusText.Text = "Status: " .. currentStatus
+		task.wait(0.2)
+	end
+end)
+
+print("✅ Correção para Mobile aplicada! Stand Morph travado com sucesso.")-- ============================================================================= --
 -- NORTH_. AUTO FARM - SIGIL SOUTH SIDE EDITION (STAND PRESO NO TORSO)
 -- ============================================================================= --
 local Players = game:GetService("Players")
