@@ -225,22 +225,77 @@ local AVAILABLE_ITEMS = {
 }
 
 local NPC_LIST = {
-	{ name = "Thug (Lvl 1+)", npcName = "Officer Sam [Lvl. 1+]", npcPos = Vector3.new(-474, 10, -777), combatNpc = "Thug", killsNeeded = 5 },
-	{ name = "Corrupt Police (Lvl 10+)", npcName = "Deputy Bertrude", npcPos = Vector3.new(-583, -26, -705), combatNpc = "Corrupt Police", killsNeeded = 5 },
-	{ name = "Alpha Thug (Lvl 15+)", npcName = "Abbacchio's Partner", npcPos = Vector3.new(-579, -26, -581), combatNpc = "Alpha Thug", killsNeeded = 5 },
-	{ name = "Zombie Henchman (Lvl 20+)", npcName = "Dracula", npcPos = Vector3.new(-416, -33, -78), combatNpc = "Zombie Henchman", killsNeeded = 3 },
-	{ name = "Vampire (Lvl 25+)", npcName = "William Zeppeli", npcPos = Vector3.new(-135, -31, 37), combatNpc = "Vampire", killsNeeded = 3 },
-	{ name = "DIO Boss (Lvl 30+)", npcName = "Doppio", npcPos = Vector3.new(-40, 0, -988), combatNpc = "DIO", killsNeeded = 1 },
-	{ name = "Jotaro Boss (Lvl 35+)", npcName = "DIO", npcPos = Vector3.new(311, -26, 485), combatNpc = "Jotaro", killsNeeded = 1 },
-	{ name = "Heaven Ascension DIO (Lvl. 40+)", npcName = "Jotaro (Heaven)", npcPos = Vector3.new(-241, 274, 293), combatNpc = "Heaven Ascension DIO", killsNeeded = 1 },
-	{ name = "Jotaro Kujo", npcName = "NGM", npcPos = Vector3.new(-241, 274, 293), combatNpc = "Jotaro Kujo", killsNeeded = 1 },
+	{
+		name = "Thug (Lvl 1+)",
+		npcName = "Officer Sam [Lvl. 1+]",
+		npcPos = Vector3.new(-474, 10, -777),
+		combatNpc = "Thug",
+		killsNeeded = 5,
+	},
+	{
+		name = "Corrupt Police (Lvl 10+)",
+		npcName = "Deputy Bertrude [Lvl. 10+]",
+		npcPos = Vector3.new(-583, -26, -705),
+		combatNpc = "Corrupt Police",
+		killsNeeded = 5,
+	},
+	{
+		name = "Alpha Thug (Lvl 15+)",
+		npcName = "Abbacchio's Partner [Lvl 15+]",
+		npcPos = Vector3.new(-579, -26, -581),
+		combatNpc = "Alpha Thug",
+		killsNeeded = 5,
+	},
+	{
+		name = "Zombie Henchman (Lvl 20+)",
+		npcName = "Dracula [Lvl. 20+]",
+		npcPos = Vector3.new(-416, -33, -78),
+		combatNpc = "Zombie Henchman",
+		killsNeeded = 3,
+	},
+	{
+		name = "Vampire (Lvl 25+)",
+		npcName = "William Zeppeli [Lvl. 25+]",
+		npcPos = Vector3.new(-135, -31, 37),
+		combatNpc = "Vampire",
+		killsNeeded = 3,
+	},
+	{
+		name = "DIO Boss (Lvl 30+)",
+		npcName = "Doppio [Lvl. 30+]",
+		npcPos = Vector3.new(-40, 0, -988),
+		combatNpc = "DIO",
+		killsNeeded = 1,
+	},
+	{
+		name = "Jotaro Boss (Lvl. 35+)",
+		npcName = "DIO [Lvl. 35+]",
+		npcPos = Vector3.new(311, -26, 485),
+		combatNpc = "Jotaro",
+		killsNeeded = 1,
+	},
+	{
+		name = "Heaven Ascension DIO (Lvl. 40+)",
+		npcName = "Jotaro (Heaven)",
+		npcPos = Vector3.new(-241, 274, 293),
+		combatNpc = "Heaven Ascension DIO",
+		killsNeeded = 1,
+	},
+	{
+		name = "Jotaro Kujo",
+		npcName = "NGM",
+		npcPos = Vector3.new(-241, 274, 293),
+		combatNpc = "Jotaro Kujo",
+		killsNeeded = 1,
+	},
 }
 
 local CONFIG = {
 	TWEEN_SPEED = 120,
-	PLAYER_BELOW = 17,
+	PLAYER_BELOW = 24,
 	FLOAT_HEIGHT = 2,
-	DISTANCE_BEHIND = 3,
+	DISTANCE_BEHIND = 2,
+	M1_INTERVAL = 0.08,
 	Q_INTERVAL = 0.25,
 	SPAM_DELAY = 0.08,
 }
