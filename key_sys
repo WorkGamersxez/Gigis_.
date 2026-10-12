@@ -206,8 +206,8 @@ local function CreateGUI()
     SideTitle.BackgroundTransparency = 1
     SideTitle.Text = "NORTH KEY SYSTEM"
     SideTitle.TextColor3 = Color3.fromRGB(25, 75, 160)
-    SideTitle.Font = Enum.Font.PermanentMarker
-    SideTitle.TextSize = 15
+    SideTitle.Font = Enum.Font.Garamond
+    SideTitle.TextSize = 50
     SideTitle.Rotation = -90
 
     -- PAINEL DE CONTEÚDO PRINCIPAL (DIREITA)
