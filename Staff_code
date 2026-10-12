@@ -1,0 +1,36 @@
+--[[
+    ================================================================
+    [ OYB OFFICIAL | ROBLOX DEVELOPER ]
+    Website: https://oybofficial.com/
+    Builder: https://oybofficial.com/keysystem
+    YouTube: https://youtube.com/@OYBOfficial
+    Discord: https://discord.gg/kT55J724BK
+    ================================================================
+]]
+
+-- ⚠️ IMPORTANT: Put this code at the VERY TOP of your Main Script (before obfuscating) ⚠️
+
+local ProtectionConfig = {
+    -- 🔴 CRITICAL: This MUST exactly match the 'Secret' value in your Key System's Config!
+    -- If your Key System has: Secret = "NORTH_STAFF_CODE_)#IJ#NJikk3kd9(#l1lz9asj2N2000238dBN3nm2dls+wk32as=-2]sdk2nmc0_wdm2amsoco3of9_2mpornogay02mmdkms_23br"
+    -- Then this must also be: SecretKey = "NORTH_STAFF_CODE_)#IJ#NJikk3kd9(#l1lz9asj2N2000238dBN3nm2dls+wk32as=-2]sdk2nmc0_wdm2amsoco3of9_2mpornogay02mmdkms_23br"
+    SecretKey = "NORTH_STAFF_CODE_)#IJ#NJikk3kd9(#l1lz9asj2N2000238dBN3nm2dls+wk32as=-2]sdk2nmc0_wdm2amsoco3of9_2mpornogay02mmdkms_23br",
+    
+    -- The name of your Hub (shown in the kick message if they try to bypass)
+    HubName = "North_."
+}
+
+-- Anti-Bypass Logic: Checks if the Key System successfully set the global variable
+if not _G[ProtectionConfig.SecretKey] then
+    local player = game:GetService("Players").LocalPlayer
+    if player then
+        player:Kick("\n🛡️ Unauthorized Execution 🛡️\n\nPlease use the official Key System to run " .. ProtectionConfig.HubName)
+    end
+    return -- Stops the rest of the script from loading!
+end
+
+-------------------------------------------------------------------------------
+-- 👇 YOUR MAIN SCRIPT CODE STARTS HERE 👇
+-------------------------------------------------------------------------------
+
+print(ProtectionConfig.HubName .. " Loaded Successfully!")
