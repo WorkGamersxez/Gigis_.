@@ -1,836 +1,429 @@
--- ============================================================================= --
--- NORTH_. AUTO FARM - SIGIL SOUTH SIDE EDITION WITH REMEMBER WARNING (2026)
--- ============================================================================= --
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local VirtualUser = game:GetService("VirtualUser")
+--[[
+    ================================================================
+    [ OYB OFFICIAL | ROBLOX DEVELOPER ]
+    Website: https://oybofficial.com/
+    Builder: https://oybofficial.com/keysystem
+    YouTube: https://youtube.com/@OYBOfficial
+    Discord: https://discord.gg/kT55J724BK
+    ================================================================
+]]
+local Config = {
+    -- [1] PlatoBoost Settings
+    ServiceId       = 33865, -- Your PlatoBoost Service ID
+    PlatoSecret     = "ec98ce7a-89d8-41a5-9e88-2031c7d97431", -- Your PlatoBoost Secret Key
 
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-local camera = workspace.CurrentCamera
-local living = workspace:WaitForChild("Living")
+    -- [2] Anti-Bypass / Global Secret Variable
+    Secret          = "NORTH_STAFF_CODE_)#IJ#NJikk3kd9(#l1lz9asj2N2000238dBN3nm2dls+wk32as=-2]sdk2nmc0_wdm2amsoco3of9_2mpornogay02mmdkms_23br", -- This makes the script ONLY run from the key script. Even if they copy the original obfuscated script to bypass the key, they won't be able to!
+    
+    -- [3] Scripts & Links
+    MainScriptURL   = "Link", -- The raw URL of your main script
+    
+    -- [4] Social Media Settings (Set to true to show, false to hide)
+    ShowDiscord     = false,
+    DiscordURL      = "https://discord.gg/kT55J724BK",
+    
+    ShowInstagram   = false,
+    InstagramURL    = "https://www.instagram.com/oyb0i/",
+    
+    ShowYoutube     = false,
+    YoutubeURL      = "https://www.youtube.com/channel/UCAlXXV1Hbvf7WbfXARuVtiQ",
 
--- Configuração do Arquivo Local de Salvamento
-local SAVE_FILE_NAME = "NorthAutoFarm_SkipWarning.txt"
+    -- [5] File System
+    KeyFileName     = "Mykey.txt", -- The name of the file where the valid key will be saved for auto-login
 
--- Limpa interfaces anteriores se existirem
-if playerGui:FindFirstChild("NorthSigilHubGui") then
-	playerGui.NorthSigilHubGui:Destroy()
-end
-if playerGui:FindFirstChild("NorthWarningGui") then
-	playerGui.NorthWarningGui:Destroy()
-end
+    -- [6] GUI Management
+    OldGuiName      = "", -- Name of the old GUI to destroy if it's already open
+    MainGuiName     = "", -- Name of the main script's GUI to check if it's already executing
 
--- ============================================================================= --
--- LÓGICA DE VERIFICAÇÃO DO AVISO
--- ============================================================================= --
-local shouldShowWarning = true
-
--- Verifica se a opção "Nunca mais mostrar" já foi salva anteriormente no executor
-if readfile and isfile and isfile(SAVE_FILE_NAME) then
-	pcall(function()
-		if readfile(SAVE_FILE_NAME) == "true" then
-			shouldShowWarning = false
-		end
-	end)
-end
-
-if shouldShowWarning then
-	local warningGui = Instance.new("ScreenGui")
-	warningGui.Name = "NorthWarningGui"
-	warningGui.ResetOnSpawn = false
-	warningGui.Parent = playerGui
-
-	local warningFrame = Instance.new("Frame")
-	warningFrame.Name = "WarningFrame"
-	warningFrame.Size = UDim2.new(0, 460, 0, 250)
-	warningFrame.Position = UDim2.new(0.5, -230, 0.5, -125)
-	warningFrame.BackgroundColor3 = Color3.fromRGB(15, 17, 22)
-	warningFrame.BorderSizePixel = 0
-	warningFrame.Active = true
-	warningFrame.Parent = warningGui
-
-	Instance.new("UICorner", warningFrame).CornerRadius = UDim.new(0, 8)
-
-	local warningStroke = Instance.new("UIStroke", warningFrame)
-	warningStroke.Color = Color3.fromRGB(230, 70, 70)
-	warningStroke.Thickness = 2
-
-	local warningTitle = Instance.new("TextLabel", warningFrame)
-	warningTitle.Size = UDim2.new(1, 0, 0, 40)
-	warningTitle.BackgroundTransparency = 1
-	warningTitle.Text = "⚠️ AVISO DE SEGURANÇA"
-	warningTitle.TextColor3 = Color3.fromRGB(255, 80, 80)
-	warningTitle.Font = Enum.Font.GothamBold
-	warningTitle.TextSize = 16
-
-	local warningMsg = Instance.new("TextLabel", warningFrame)
-	warningMsg.Size = UDim2.new(1, -40, 0, 50)
-	warningMsg.Position = UDim2.new(0, 20, 0, 40)
-	warningMsg.BackgroundTransparency = 1
-	warningMsg.Text = "Esse script pode causar ban. Deseja continuar?"
-	warningMsg.TextColor3 = Color3.fromRGB(230, 235, 245)
-	warningMsg.Font = Enum.Font.Gotham
-	warningMsg.TextSize = 14
-	warningMsg.TextWrapped = true
-
-	local timerLabel = Instance.new("TextLabel", warningFrame)
-	timerLabel.Size = UDim2.new(1, 0, 0, 20)
-	timerLabel.Position = UDim2.new(0, 0, 0, 95)
-	timerLabel.BackgroundTransparency = 1
-	timerLabel.Text = "Tempo restante: 30s"
-	timerLabel.TextColor3 = Color3.fromRGB(150, 160, 180)
-	timerLabel.Font = Enum.Font.Gotham
-	timerLabel.TextSize = 12
-
-	-- Botão 1: Continuar Apenas Hoje
-	local continueBtn = Instance.new("TextButton", warningFrame)
-	continueBtn.Size = UDim2.new(0, 410, 0, 32)
-	continueBtn.Position = UDim2.new(0, 25, 0, 125)
-	continueBtn.BackgroundColor3 = Color3.fromRGB(30, 140, 70)
-	continueBtn.Text = "CONTINUAR"
-	continueBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	continueBtn.Font = Enum.Font.GothamBold
-	continueBtn.TextSize = 12
-	Instance.new("UICorner", continueBtn).CornerRadius = UDim.new(0, 5)
-
-	-- Botão 2: Continuar e Salvar (Nunca Mais Mostrar)
-	local dontShowBtn = Instance.new("TextButton", warningFrame)
-	dontShowBtn.Size = UDim2.new(0, 410, 0, 32)
-	dontShowBtn.Position = UDim2.new(0, 25, 0, 163)
-	dontShowBtn.BackgroundColor3 = Color3.fromRGB(30, 90, 180)
-	dontShowBtn.Text = "CONTINUAR (NUNCA MAIS MOSTRAR ESTA MENSAGEM)"
-	dontShowBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	dontShowBtn.Font = Enum.Font.GothamBold
-	dontShowBtn.TextSize = 11
-	Instance.new("UICorner", dontShowBtn).CornerRadius = UDim.new(0, 5)
-
-	-- Botão 3: Fechar Script
-	local closeBtn = Instance.new("TextButton", warningFrame)
-	closeBtn.Size = UDim2.new(0, 410, 0, 32)
-	closeBtn.Position = UDim2.new(0, 25, 0, 201)
-	closeBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
-	closeBtn.Text = "FECHAR SCRIPT"
-	closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	closeBtn.Font = Enum.Font.GothamBold
-	closeBtn.TextSize = 12
-	Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 5)
-
-	local userDecision = nil
-
-	continueBtn.MouseButton1Click:Connect(function()
-		userDecision = "continue"
-	end)
-
-	dontShowBtn.MouseButton1Click:Connect(function()
-		userDecision = "never_show"
-		if writefile then
-			pcall(function()
-				writefile(SAVE_FILE_NAME, "true")
-			end)
-		end
-	end)
-
-	closeBtn.MouseButton1Click:Connect(function()
-		userDecision = "close"
-	end)
-
-	-- Timer regressivo de 30 segundos
-	task.spawn(function()
-		local timeLeft = 30
-		while timeLeft > 0 and userDecision == nil do
-			timerLabel.Text = "Tempo restante: " .. tostring(timeLeft) .. "s"
-			task.wait(1)
-			timeLeft = timeLeft - 1
-		end
-		if userDecision == nil then
-			userDecision = "close"
-		end
-	end)
-
-	while userDecision == nil do
-		task.wait(0.1)
-	end
-
-	warningGui:Destroy()
-
-	if userDecision == "close" then
-		warn("❌ Execução cancelada pelo usuário ou por tempo limite.")
-		return
-	end
-end
-
--- ============================================================================= --
--- SCRIPT PRINCIPAL E INTERFACE HUB (CARREGADOS APÓS CONFIRMAÇÃO)
--- ============================================================================= --
-
--- Anti-AFK
-player.Idled:Connect(function()
-	VirtualUser:CaptureController()
-	VirtualUser:ClickButton2(Vector2.new(0, 0))
-end)
-
--- Lista de Missões
-local NPC_LIST = {
-	{
-		name = "Thug (Lvl 1+)",
-		npcName = "Officer Sam [Lvl. 1+]",
-		npcPos = Vector3.new(-474, 10, -777),
-		combatNpc = "Thug",
-		killsNeeded = 5,
-	},
-	{
-		name = "Corrupt Police (Lvl 10+)",
-		npcName = "Deputy Bertrude [Lvl. 10+]",
-		npcPos = Vector3.new(-583, -26, -705),
-		combatNpc = "Corrupt Police",
-		killsNeeded = 5,
-	},
-	{
-		name = "Alpha Thug (Lvl 15+)",
-		npcName = "Abbacchio's Partner [Lvl 15+]",
-		npcPos = Vector3.new(-579, -26, -581),
-		combatNpc = "Alpha Thug",
-		killsNeeded = 5,
-	},
-	{
-		name = "Zombie Henchman (Lvl 20+)",
-		npcName = "Dracula [Lvl. 20+]",
-		npcPos = Vector3.new(-416, -33, -78),
-		combatNpc = "Zombie Henchman",
-		killsNeeded = 3,
-	},
-	{
-		name = "Vampire (Lvl 25+)",
-		npcName = "William Zeppeli [Lvl. 25+]",
-		npcPos = Vector3.new(-135, -31, 37),
-		combatNpc = "Vampire",
-		killsNeeded = 3,
-	},
-	{
-		name = "DIO Boss (Lvl 30+)",
-		npcName = "Doppio [Lvl. 30+]",
-		npcPos = Vector3.new(-40, 0, -988),
-		combatNpc = "DIO",
-		killsNeeded = 1,
-	},
-	{
-		name = "Jotaro Boss (Lvl. 35+)",
-		npcName = "DIO [Lvl. 35+]",
-		npcPos = Vector3.new(311, -26, 485),
-		combatNpc = "Jotaro",
-		killsNeeded = 1,
-	},
-	{
-		name = "Heaven Ascension DIO (Lvl. 40+)",
-		npcName = "Jotaro (Heaven)",
-		npcPos = Vector3.new(-241, 274, 293),
-		combatNpc = "Heaven Ascension DIO",
-		killsNeeded = 1,
-	},
-	{
-		name = "Jotaro Kujo (non functional)",
-		npcName = "NGM",
-		npcPos = Vector3.new(-241, 274, 293),
-		combatNpc = "Jotaro Kujo",
-		killsNeeded = 1,
-	},
+    -- [7] Hub Information & UI Text
+    HubName         = "Test", -- The main title shown at the top of the GUI
+    HubDescription  = "Test" -- The text shown below the title
 }
 
-local CONFIG = {
-	TWEEN_SPEED = 250,
-	PLAYER_BELOW = 25,
-	FLOAT_HEIGHT = 2,
-	DISTANCE_BEHIND = 2,
-	M1_INTERVAL = 0.08,
-	Q_INTERVAL = 0.25,
-	SPAM_DELAY = 0.08,
-}
+-------------------------------------------------------------------------------
+--! LIBRARIES (JSON & CRYPTOGRAPHY) - DO NOT MODIFY
+-------------------------------------------------------------------------------
+local a=2^32;local b=a-1;local function c(d,e)local f,g=0,1;while d~=0 or e~=0 do local h,i=d%2,e%2;local j=(h+i)%2;f=f+j*g;d=math.floor(d/2)e=math.floor(e/2)g=g*2 end;return f%a end;local function k(d,e,l,...)local m;if e then d=d%a;e=e%a;m=c(d,e)if l then m=k(m,l,...)end;return m elseif d then return d%a else return 0 end end;local function n(d,e,l,...)local m;if e then d=d%a;e=e%a;m=(d+e-c(d,e))/2;if l then m=n(m,l,...)end;return m elseif d then return d%a else return b end end;local function o(p)return b-p end;local function q(d,r)if r<0 then return lshift(d,-r)end;return math.floor(d%2^32/2^r)end;local function s(p,r)if r>31 or r<-31 then return 0 end;return q(p%a,r)end;local function lshift(d,r)if r<0 then return s(d,-r)end;return d*2^r%2^32 end;local function t(p,r)p=p%a;r=r%32;local u=n(p,2^r-1)return s(p,r)+lshift(u,32-r)end;local v={0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2}local function w(x)return string.gsub(x,".",function(l)return string.format("%02x",string.byte(l))end)end;local function y(z,A)local x=""for B=1,A do local C=z%256;x=string.char(C)..x;z=(z-C)/256 end;return x end;local function D(x,B)local A=0;for B=B,B+3 do A=A*256+string.byte(x,B)end;return A end;local function E(F,G)local H=64-(G+9)%64;G=y(8*G,8)F=F.."\128"..string.rep("\0",H)..G;assert(#F%64==0)return F end;local function I(J)J[1]=0x6a09e667;J[2]=0xbb67ae85;J[3]=0x3c6ef372;J[4]=0xa54ff53a;J[5]=0x510e527f;J[6]=0x9b05688c;J[7]=0x1f83d9ab;J[8]=0x5be0cd19;return J end;local function K(F,B,J)local L={}for M=1,16 do L[M]=D(F,B+(M-1)*4)end;for M=17,64 do local N=L[M-15]local O=k(t(N,7),t(N,18),s(N,3))N=L[M-2]L[M]=(L[M-16]+O+L[M-7]+k(t(N,17),t(N,19),s(N,10)))%a end;local d,e,l,P,Q,R,S,T=J[1],J[2],J[3],J[4],J[5],J[6],J[7],J[8]for B=1,64 do local O=k(t(d,2),t(d,13),t(d,22))local U=k(n(d,e),n(d,l),n(e,l))local V=(O+U)%a;local W=k(t(Q,6),t(Q,11),t(Q,25))local X=k(n(Q,R),n(o(Q),S))local Y=(T+W+X+v[B]+L[B])%a;T=S;S=R;R=Q;Q=(P+Y)%a;P=l;l=e;e=d;d=(Y+V)%a end;J[1]=(J[1]+d)%a;J[2]=(J[2]+e)%a;J[3]=(J[3]+l)%a;J[4]=(J[4]+P)%a;J[5]=(J[5]+Q)%a;J[6]=(J[6]+R)%a;J[7]=(J[7]+S)%a;J[8]=(J[8]+T)%a end;local function Z(F)F=E(F,#F)local J=I({})for B=1,#F,64 do K(F,B,J)end;return w(y(J[1],4)..y(J[2],4)..y(J[3],4)..y(J[4],4)..y(J[5],4)..y(J[6],4)..y(J[7],4)..y(J[8],4))end;local e;local l={["\\"]="\\",["\""]="\"",["\b"]="b",["\f"]="f",["\n"]="n",["\r"]="r",["\t"]="t"}local P={["/"]="/"}for Q,R in pairs(l)do P[R]=Q end;local S=function(T)return"\\"..(l[T]or string.format("u%04x",T:byte()))end;local B=function(M)return"null"end;local v=function(M,z)local _={}z=z or{}if z[M]then error("circular reference")end;z[M]=true;if rawget(M,1)~=nil or next(M)==nil then local A=0;for Q in pairs(M)do if type(Q)~="number"then error("invalid table: mixed or invalid key types")end;A=A+1 end;if A~=#M then error("invalid table: sparse array")end;for a0,R in ipairs(M)do table.insert(_,e(R,z))end;z[M]=nil;return"["..table.concat(_,",").."]"else for Q,R in pairs(M)do if type(Q)~="string"then error("invalid table: mixed or invalid key types")end;table.insert(_,e(Q,z)..":"..e(R,z))end;z[M]=nil;return"{"..table.concat(_,",").."}"end end;local g=function(M)return'"'..M:gsub('[%z\1-\31\\\"]',S)..'"'end;local a1=function(M)if M~=M or M<=-math.huge or M>=math.huge then error("unexpected number value '"..tostring(M).."'")end;return string.format("%.14g",M)end;local j={["nil"]=B,["table"]=v,["string"]=g,["number"]=a1,["boolean"]=tostring}e=function(M,z)local x=type(M)local a2=j[x]if a2 then return a2(M,z)end;error("unexpected type '"..x.."'")end;local a3=function(M)return e(M)end;local a4;local N=function(...)local _={}for a0=1,select("#",...)do _[select(a0,...)]=true end;return _ end;local L=N(" ","\t","\r","\n")local p=N(" ","\t","\r","\n","]","}",",")local a5=N("\\","/",'"',"b","f","n","r","t","u")local m=N("true","false","null")local a6={["true"]=true,["false"]=false,["null"]=nil}local a7=function(a8,a9,aa,ab)for a0=a9,#a8 do if aa[a8:sub(a0,a0)]~=ab then return a0 end end;return#a8+1 end;local ac=function(a8,a9,J)local ad=1;local ae=1;for a0=1,a9-1 do ae=ae+1;if a8:sub(a0,a0)=="\n"then ad=ad+1;ae=1 end end;error(string.format("%s at line %d col %d",J,ad,ae))end;local af=function(A)local a2=math.floor;if A<=0x7f then return string.char(A)elseif A<=0x7ff then return string.char(a2(A/64)+192,A%64+128)elseif A<=0xffff then return string.char(a2(A/4096)+224,a2(A%4096/64)+128,A%64+128)elseif A<=0x10ffff then return string.char(a2(A/262144)+240,a2(A%262144/4096)+128,a2(A%4096/64)+128,A%64+128)end;error(string.format("invalid unicode codepoint '%x'",A))end;local ag=function(ah)local ai=tonumber(ah:sub(1,4),16)local aj=tonumber(ah:sub(7,10),16)if aj then return af((ai-0xd800)*0x400+aj-0xdc00+0x10000)else return af(ai)end end;local ak=function(a8,a0)local _=""local al=a0+1;local Q=al;while al<=#a8 do local am=a8:byte(al)if am<32 then ac(a8,al,"control character in string")elseif am==92 then _=_..a8:sub(Q,al-1)al=al+1;local T=a8:sub(al,al)if T=="u"then local an=a8:match("^[dD][89aAbB]%x%x\\u%x%x%x%x",al+1)or a8:match("^%x%x%x%x",al+1)or ac(a8,al-1,"invalid unicode escape in string")_=_..ag(an)al=al+#an else if not a5[T]then ac(a8,al-1,"invalid escape char '"..T.."' in string")end;_=_..P[T]end;Q=al+1 elseif am==34 then _=_..a8:sub(Q,al-1)return _,al+1 end;al=al+1 end;ac(a8,a0,"expected closing quote for string")end;local ao=function(a8,a0)local am=a7(a8,a0,p)local ah=a8:sub(a0,am-1)local A=tonumber(ah)if not A then ac(a8,a0,"invalid number '"..ah.."'")end;return A,am end;local ap=function(a8,a0)local am=a7(a8,a0,p)local aq=a8:sub(a0,am-1)if not m[aq]then ac(a8,a0,"invalid literal '"..aq.."'")end;return a6[aq],am end;local ar=function(a8,a0)local _={}local A=1;a0=a0+1;while 1 do local am;a0=a7(a8,a0,L,true)if a8:sub(a0,a0)=="]"then a0=a0+1;break end;am,a0=a4(a8,a0)_[A]=am;A=A+1;a0=a7(a8,a0,L,true)local as=a8:sub(a0,a0)a0=a0+1;if as=="]"then break end;if as~=","then ac(a8,a0,"expected ']' or ','")end end;return _,a0 end;local at=function(a8,a0)local _={}a0=a0+1;while 1 do local au,M;a0=a7(a8,a0,L,true)if a8:sub(a0,a0)=="}"then a0=a0+1;break end;if a8:sub(a0,a0)~='"'then ac(a8,a0,"expected string for key")end;au,a0=a4(a8,a0)a0=a7(a8,a0,L,true)if a8:sub(a0,a0)~=":"then ac(a8,a0,"expected ':' after key")end;a0=a7(a8,a0+1,L,true)M,a0=a4(a8,a0)_[au]=M;a0=a7(a8,a0,L,true)local as=a8:sub(a0,a0)a0=a0+1;if as=="}"then break end;if as~=","then ac(a8,a0,"expected '}' or ','")end end;return _,a0 end;local av={['"']=ak,["0"]=ao,["1"]=ao,["2"]=ao,["3"]=ao,["4"]=ao,["5"]=ao,["6"]=ao,["7"]=ao,["8"]=ao,["9"]=ao,["-"]=ao,["t"]=ap,["f"]=ap,["n"]=ap,["["]=ar,["{"]=at}a4=function(a8,a9)local as=a8:sub(a9,a9)local a2=av[as]if a2 then return a2(a8,a9)end;ac(a8,a9,"unexpected character '"..as.."'")end;local aw=function(a8)if type(a8)~="string"then error("expected argument of type string, got "..type(a8))end;local _,a9=a4(a8,a7(a8,1,L,true))a9=a7(a8,a9,L,true)if a9<=#a8 then ac(a8,a9,"trailing garbage")end;return _ end;
+local lEncode, lDecode, lDigest = a3, aw, Z;
 
-local isRunning = false
-local currentStatus = "Aguardando"
-local selectedMission = NPC_LIST[1]
-local combatEnabled = false
-local currentNPC = nil
-local targetNpcHrp = nil
-local antiFallPlatform = nil
-local qLoopRunning = false
+-------------------------------------------------------------------------------
+--! CORE FUNCTIONS (REQUESTS & VERIFICATION)
+-------------------------------------------------------------------------------
 
-local function getCharacterElements()
-	local char = player.Character
-	if not char then return nil, nil, nil end
-	return char, char:FindFirstChild("Humanoid"), char:FindFirstChild("HumanoidRootPart")
+local useNonce = true 
+
+local function safeRequest(options)
+    local req = request or http_request or syn_request or (http and http.request )
+    if not req then return nil, "HTTP requests not supported" end
+    local success, response = pcall(function() return req(options) end)
+    if success and type(response) == "table" then 
+        return response 
+    else 
+       
+        return nil, "Connection Error: " .. tostring(response or "Unknown") 
+    end
 end
 
-local function getStandMorph()
-	local playerModel = living:FindFirstChild(player.Name)
-	return playerModel and (playerModel:FindFirstChild("StandMorph") or playerModel:FindFirstChild("Stand"))
+local fSetClipboard = setclipboard or toclipboard or function() end
+local fStringChar, fToString, fOsTime, fMathRandom, fMathFloor = string.char, tostring, os.time, math.random, math.floor
+local fGetHwid = gethwid or function() return game:GetService("RbxAnalyticsService"):GetClientId() end
+
+local cachedLink, cachedTime = "", 0
+local host = "https://api.platoboost.com"
+
+local function checkConnectivity( )
+    local response, err = safeRequest({Url = host .. "/public/connectivity", Method = "GET"})
+    if not response or (response.StatusCode ~= 200 and response.StatusCode ~= 429) then
+        host = "https://api.platoboost.net"
+        local fallbackResponse, fallbackErr = safeRequest({Url = host .. "/public/connectivity", Method = "GET"})
+        if not fallbackResponse then
+            return false 
+        end
+    end
+    return true
 end
 
-local function getNPCHealth(npc)
-	if not npc then return nil end
-	local health = npc:FindFirstChild("Health")
-	return (health and health:IsA("DoubleConstrainedValue")) and health or nil
+local function generateNonce()
+    local str = ""
+    for _ = 1, 16 do str = str .. fStringChar(fMathFloor(fMathRandom() * (122 - 97 + 1)) + 97) end
+    return str
 end
 
-local function getNPCHRP(npc)
-	if not npc then return nil end
-	return npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Torso") or npc:FindFirstChild("UpperTorso")
+local function cacheLink()
+    local isConnected = checkConnectivity()
+    if not isConnected then
+        return false, "Delta/Network Error! Use VPN or change Executor."
+    end
+    
+    if cachedTime + (10*60) < fOsTime() then
+        local response, err = safeRequest({
+            Url = host .. "/public/start",
+            Method = "POST",
+            Body = lEncode({service = Config.ServiceId, identifier = lDigest(fGetHwid())}),
+            Headers = {["Content-Type"] = "application/json"}
+        })
+        if response and response.StatusCode == 200 then
+            local decoded = lDecode(response.Body)
+            if decoded.success then
+                cachedLink = decoded.data.url
+                cachedTime = fOsTime()
+                return true, cachedLink
+            end
+        end
+        return false, err or "Server Unreachable"
+    end
+    return true, cachedLink
 end
 
-local function isDialogueGuiActive()
-	return playerGui:FindFirstChild("DialogueGui") ~= nil or playerGui:FindFirstChild("Dialogue") ~= nil
+local function redeemKey(key)
+    local nonce = generateNonce()
+    local body = {identifier = lDigest(fGetHwid()), key = key}
+    if useNonce then body.nonce = nonce end
+    
+    local response, err = safeRequest({
+        Url = host .. "/public/redeem/" .. fToString(Config.ServiceId),
+        Method = "POST",
+        Body = lEncode(body),
+        Headers = {["Content-Type"] = "application/json"}
+    })
+    
+    if response and response.StatusCode == 200 then
+        local decoded = lDecode(response.Body)
+        if decoded.success and decoded.data.valid then
+            if useNonce then
+                if decoded.data.hash == lDigest("true" .. "-" .. nonce .. "-" .. Config.PlatoSecret) then 
+                    if writefile then writefile(Config.KeyFileName, key) end
+                    return true, "Success" 
+                end
+                return false, "Integrity Check Failed"
+            end
+            if writefile then writefile(Config.KeyFileName, key) end
+            return true, "Success"
+        end
+        return false, decoded.message or "Invalid Key"
+    end
+    return false, err or "Server Error"
 end
 
-local function fastWait(condition, timeout)
-	local start = os.clock()
-	while os.clock() - start < timeout do
-		if not isRunning then return false end
-		local success, result = pcall(condition)
-		if success and result then return true end
-		task.wait(0.1)
-	end
-	return false
+-------------------------------------------------------------------------------
+--! GUI & MAIN SCRIPT EXECUTION
+-------------------------------------------------------------------------------
+
+local function StartMainScript()
+    local player = game:GetService("Players").LocalPlayer
+    local pGui = player:WaitForChild("PlayerGui")
+    
+    if pGui:FindFirstChild(Config.OldGuiName) then 
+        pGui[Config.OldGuiName]:Destroy() 
+        task.wait(0.1)
+    end
+    
+    _G[Config.Secret] = true 
+    
+    loadstring(game:HttpGet(Config.MainScriptURL))()
 end
 
-RunService.RenderStepped:Connect(function()
-	if isRunning then
-		if player.Character then
-			for _, part in pairs(player.Character:GetDescendants()) do
-				if part:IsA("BasePart") then part.CanCollide = false end
-			end
-			local _, _, hrp = getCharacterElements()
-			if hrp then
-				if not antiFallPlatform or not antiFallPlatform.Parent then
-					antiFallPlatform = Instance.new("Part")
-					antiFallPlatform.Name = "NorthAntiFall"
-					antiFallPlatform.Size = Vector3.new(10, 1, 10)
-					antiFallPlatform.Anchored = true
-					antiFallPlatform.CanCollide = true
-					antiFallPlatform.Transparency = 1
-					antiFallPlatform.Parent = workspace
-				end
-				antiFallPlatform.CFrame = hrp.CFrame - Vector3.new(0, 3.5, 0)
-			end
-		end
+local function CreateGUI()
+    local player = game:GetService("Players").LocalPlayer
+    local coreGui = game:GetService("CoreGui")
+    local targetParent = pcall(function() return coreGui end) and coreGui or player:WaitForChild("PlayerGui")
+    
+    if targetParent:FindFirstChild("OYB_KeySystem") then targetParent.OYB_KeySystem:Destroy() end
 
-		if targetNpcHrp and targetNpcHrp.Parent then
-			local stand = getStandMorph()
-			if stand and stand.PrimaryPart then
-				local targetCFrame = targetNpcHrp.CFrame * CFrame.new(0, CONFIG.FLOAT_HEIGHT, CONFIG.DISTANCE_BEHIND)
-				stand.PrimaryPart.CFrame = targetCFrame
-				stand.PrimaryPart.AssemblyLinearVelocity = Vector3.zero
-				stand.PrimaryPart.AssemblyAngularVelocity = Vector3.zero
-				stand:PivotTo(targetCFrame)
-			end
-		end
-	end
-end)
+    local ScreenGui = Instance.new("ScreenGui", targetParent)
+    ScreenGui.Name = "OYB_KeySystem"
+    ScreenGui.ResetOnSpawn = false
 
-local function destroyAntiFallPlatform()
-	if antiFallPlatform then
-		antiFallPlatform:Destroy()
-		antiFallPlatform = nil
-	end
+    local MainFrame = Instance.new("Frame", ScreenGui)
+    MainFrame.Size = UDim2.new(0, 340, 0, 420)
+    MainFrame.Position = UDim2.new(0.5, -170, 0.5, -210)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    MainFrame.Active = true;
+    MainFrame.Draggable = true
+    Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 15)
+    
+    local mainStroke = Instance.new("UIStroke", MainFrame)
+    mainStroke.Thickness = 2;
+    mainStroke.Color = Color3.fromRGB(40, 40, 40)
+
+    local CloseBtn = Instance.new("TextButton", MainFrame)
+    CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+    CloseBtn.Position = UDim2.new(1, -35, 0, 10)
+    CloseBtn.BackgroundTransparency = 1
+    CloseBtn.Text = "X"
+    CloseBtn.TextColor3 = Color3.fromRGB(255, 50, 50)
+    CloseBtn.Font = Enum.Font.GothamBold
+    CloseBtn.TextSize = 18
+    CloseBtn.ZIndex = 10
+    CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+
+    local Title = Instance.new("TextLabel", MainFrame)
+    Title.Size = UDim2.new(1, 0, 0, 50)
+    Title.Text = Config.HubName
+    Title.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    Title.TextColor3 = Color3.fromRGB(0, 170, 255)
+    Title.Font = Enum.Font.GothamBold;
+    Title.TextSize = 16
+    Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 15)
+
+    local PromoText = Instance.new("TextLabel", MainFrame)
+    PromoText.Size = UDim2.new(0.9, 0, 0, 50)
+    PromoText.Position = UDim2.new(0.05, 0, 0, 50)
+    PromoText.BackgroundTransparency = 1
+    PromoText.Text = Config.HubDescription
+    PromoText.TextColor3 = Color3.fromRGB(0, 170, 255)
+    PromoText.Font = Enum.Font.GothamBold;
+    PromoText.TextSize = 14
+    PromoText.TextWrapped = true
+
+    local function AddRainbowStroke(parent)
+        local stroke = Instance.new("UIStroke", parent)
+        stroke.Thickness = 2
+        stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        task.spawn(function()
+            while task.wait() do
+                local hue = tick() % 5 / 5
+                stroke.Color = Color3.fromHSV(hue, 1, 1)
+            end
+        end)
+    end
+
+    local currentYOffset = 105
+
+    if Config.ShowDiscord then
+        local DiscordBtn = Instance.new("TextButton", MainFrame)
+        DiscordBtn.Size = UDim2.new(0.85, 0, 0, 35)
+        DiscordBtn.Position = UDim2.new(0.075, 0, 0, currentYOffset)
+        DiscordBtn.Text = "      JOIN DISCORD"
+        DiscordBtn.Font = "GothamBold";
+        DiscordBtn.TextSize = 14
+        DiscordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
+        DiscordBtn.TextColor3 = Color3.new(1, 1, 1)
+        Instance.new("UICorner", DiscordBtn)
+        AddRainbowStroke(DiscordBtn)
+
+        local DiscordIcon = Instance.new("ImageLabel", DiscordBtn)
+        DiscordIcon.Size = UDim2.new(0, 20, 0, 20)
+        DiscordIcon.Position = UDim2.new(0.1, 0, 0.5, -10)
+        DiscordIcon.BackgroundTransparency = 1
+        DiscordIcon.Image = "rbxassetid://18505728201"
+        
+        DiscordBtn.MouseButton1Click:Connect(function()
+            fSetClipboard(Config.DiscordURL)
+            local Status = MainFrame:FindFirstChild("StatusLabel")
+            if Status then 
+                Status.Text = "Discord Link Copied!"
+                Status.TextColor3 = Color3.fromRGB(88, 101, 242)
+            end
+            local inviteCode = string.match(Config.DiscordURL, "discord%.gg/([%w-]+)")
+            if syn and syn.request and inviteCode then
+                syn.request({Url = "http://localhost:1111/discord?invite=" .. inviteCode, Method = "GET"})
+            end
+        end)
+        
+        currentYOffset = currentYOffset + 45
+    end
+
+    if Config.ShowInstagram then
+        local InstaBtn = Instance.new("TextButton", MainFrame)
+        InstaBtn.Size = UDim2.new(0.85, 0, 0, 35)
+        InstaBtn.Position = UDim2.new(0.075, 0, 0, currentYOffset)
+        InstaBtn.Text = "      FOLLOW INSTAGRAM"
+        InstaBtn.Font = "GothamBold";
+        InstaBtn.TextSize = 14
+        InstaBtn.BackgroundColor3 = Color3.fromRGB(225, 48, 108)
+        InstaBtn.TextColor3 = Color3.new(1, 1, 1)
+        Instance.new("UICorner", InstaBtn)
+        AddRainbowStroke(InstaBtn)
+
+        local InstaIcon = Instance.new("ImageLabel", InstaBtn)
+        InstaIcon.Size = UDim2.new(0, 20, 0, 20)
+        InstaIcon.Position = UDim2.new(0.1, 0, 0.5, -10)
+        InstaIcon.BackgroundTransparency = 1
+        InstaIcon.Image = "rbxassetid://18355586382"
+        
+        InstaBtn.MouseButton1Click:Connect(function()
+            fSetClipboard(Config.InstagramURL)
+            local Status = MainFrame:FindFirstChild("StatusLabel")
+            if Status then 
+                Status.Text = "Instagram Link Copied!"
+                Status.TextColor3 = Color3.fromRGB(225, 48, 108)
+            end
+        end)
+        
+        currentYOffset = currentYOffset + 45
+    end
+    
+    if Config.ShowYoutube then
+        local YTBtn = Instance.new("TextButton", MainFrame)
+        YTBtn.Size = UDim2.new(0.85, 0, 0, 35)
+        YTBtn.Position = UDim2.new(0.075, 0, 0, currentYOffset)
+        YTBtn.Text = "      SUBSCRIBE YOUTUBE"
+        YTBtn.Font = "GothamBold";
+        YTBtn.TextSize = 14
+        YTBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        YTBtn.TextColor3 = Color3.new(1, 1, 1)
+        Instance.new("UICorner", YTBtn)
+        AddRainbowStroke(YTBtn)
+
+        local YTIcon = Instance.new("ImageLabel", YTBtn)
+        YTIcon.Size = UDim2.new(0, 20, 0, 20)
+        YTIcon.Position = UDim2.new(0.1, 0, 0.5, -10)
+        YTIcon.BackgroundTransparency = 1
+        YTIcon.Image = "rbxassetid://82532989017804"
+        
+        YTBtn.MouseButton1Click:Connect(function()
+            fSetClipboard(Config.YoutubeURL)
+            local Status = MainFrame:FindFirstChild("StatusLabel")
+            if Status then
+                Status.Text = "YouTube Link Copied!"
+                Status.TextColor3 = Color3.fromRGB(255, 0, 0)
+            end
+        end)
+        
+        currentYOffset = currentYOffset + 45
+    end
+
+    local KeyInput = Instance.new("TextBox", MainFrame)
+    KeyInput.Size = UDim2.new(0.85, 0, 0, 40)
+    KeyInput.Position = UDim2.new(0.075, 0, 0, currentYOffset + 15)
+    KeyInput.PlaceholderText = "Enter Key..."
+    KeyInput.Text = ""
+    KeyInput.Font = Enum.Font.GothamSemibold;
+    KeyInput.TextSize = 14
+    KeyInput.BackgroundColor3 = Color3.fromRGB(25, 25, 25);
+    KeyInput.TextColor3 = Color3.new(1, 1, 1)
+    Instance.new("UICorner", KeyInput)
+
+    local VerifyBtn = Instance.new("TextButton", MainFrame)
+    VerifyBtn.Size = UDim2.new(0.4, 0, 0, 40)
+    VerifyBtn.Position = UDim2.new(0.075, 0, 0, currentYOffset + 65)
+    VerifyBtn.Text = "VERIFY"
+    VerifyBtn.Font = "GothamBold";
+    VerifyBtn.TextSize = 14
+    VerifyBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255);
+    VerifyBtn.TextColor3 = Color3.new(1, 1, 1)
+    Instance.new("UICorner", VerifyBtn)
+
+    local GetKeyBtn = Instance.new("TextButton", MainFrame)
+    GetKeyBtn.Size = UDim2.new(0.4, 0, 0, 40)
+    GetKeyBtn.Position = UDim2.new(0.525, 0, 0, currentYOffset + 65)
+    GetKeyBtn.Text = "GET KEY"
+    GetKeyBtn.Font = "GothamBold";
+    GetKeyBtn.TextSize = 14
+    GetKeyBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35);
+    GetKeyBtn.TextColor3 = Color3.new(1, 1, 1)
+    Instance.new("UICorner", GetKeyBtn)
+
+    local Status = Instance.new("TextLabel", MainFrame)
+    Status.Name = "StatusLabel"
+    Status.Size = UDim2.new(1, 0, 0, 30)
+    Status.Position = UDim2.new(0, 0, 0, currentYOffset + 115)
+    Status.BackgroundTransparency = 1
+    Status.Text = "Waiting for input..."
+    Status.TextColor3 = Color3.fromRGB(150, 150, 150)
+    Status.Font = Enum.Font.Gotham;
+    Status.TextSize = 12
+    
+    MainFrame.Size = UDim2.new(0, 340, 0, currentYOffset + 160)
+
+    VerifyBtn.MouseButton1Click:Connect(function()
+        local key = KeyInput.Text
+        if key == "" then Status.Text = "Enter a key!"; return end
+        Status.Text = "Verifying..."
+        local success, msg = redeemKey(key)
+        if success then
+            Status.Text = "Success! Loading..."
+            Status.TextColor3 = Color3.fromRGB(0, 255, 100)
+            task.wait(0.5)
+            ScreenGui:Destroy()
+            StartMainScript()
+        else
+            Status.Text = msg
+            Status.TextColor3 = Color3.fromRGB(255, 50, 50)
+        end
+    end)
+
+    GetKeyBtn.MouseButton1Click:Connect(function()
+        Status.Text = "Getting Link..."
+        local success, link = cacheLink()
+        if success then
+            fSetClipboard(link)
+            Status.Text = "Link Copied!"
+            Status.TextColor3 = Color3.fromRGB(0, 170, 255)
+        else
+            Status.Text = tostring(link) 
+            Status.TextColor3 = Color3.fromRGB(255, 100, 100)
+        end
+    end)
+
+    if isfile and isfile(Config.KeyFileName) then
+        local savedKey = readfile(Config.KeyFileName)
+        if savedKey ~= "" then
+            Status.Text = "Found saved key, verifying..."
+            task.spawn(function()
+                local success, msg = redeemKey(savedKey)
+                if success then
+                    Status.Text = "Auto-login success!"
+                    Status.TextColor3 = Color3.fromRGB(0, 255, 100)
+                    task.wait(0.5)
+                    ScreenGui:Destroy()
+                    StartMainScript()
+                else
+                    Status.Text = "Saved key expired or invalid."
+                    Status.TextColor3 = Color3.fromRGB(255, 150, 0)
+                end
+            end)
+        end
+    end
 end
 
-local function sendNativeM1()
-	local char = player.Character
-	if not char then return end
-	pcall(function()
-		local remoteFunction = char:FindFirstChild("RemoteFunction")
-		if remoteFunction then
-			remoteFunction:InvokeServer("Attack", "m1")
-		end
-	end)
+local player = game:GetService("Players").LocalPlayer
+local pGui = player:WaitForChild("PlayerGui")
+
+if pGui:FindFirstChild(Config.MainGuiName) then
+    StartMainScript() 
+    return
 end
 
-local function startQLoop()
-	if qLoopRunning then return end
-	qLoopRunning = true
-	task.spawn(function()
-		while combatEnabled and qLoopRunning and isRunning do
-			if getStandMorph() then break end
-			pcall(function() VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Q, false, game) end)
-			task.wait(0.04)
-			pcall(function() VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Q, false, game) end)
-			task.wait(CONFIG.Q_INTERVAL)
-		end
-		qLoopRunning = false
-	end)
-end
-
-local function returnStandToPlayer()
-	currentNPC = nil
-	targetNpcHrp = nil
-	local stand = getStandMorph()
-	local _, humanoid, hrp = getCharacterElements()
-	if stand and hrp and hrp.Parent then
-		stand:PivotTo(hrp.CFrame * CFrame.new(0, 0, 3))
-	end
-	if humanoid then camera.CameraSubject = humanoid end
-end
-
-local function setCombatState(wantEnabled)
-	if wantEnabled then
-		local _, humanoid, _ = getCharacterElements()
-		if not humanoid or humanoid.Health <= 0 then return end
-		combatEnabled = true
-		currentNPC = nil
-		if not getStandMorph() then startQLoop() end
-	else
-		combatEnabled = false
-		qLoopRunning = false
-		returnStandToPlayer()
-	end
-end
-
-local function findNearestTargetNPC()
-	local char = player.Character
-	local playerHrp = char and char:FindFirstChild("HumanoidRootPart")
-	if not playerHrp then return nil end
-
-	local closest = nil
-	local shortestDist = math.huge
-	local targetName = selectedMission.combatNpc
-
-	for _, npc in ipairs(living:GetChildren()) do
-		if npc:IsA("Model") then
-			local matchFound = false
-			if npc.Name == targetName then
-				matchFound = true
-			elseif targetName == "Jotaro" and npc.Name == "Jotaro" then
-				matchFound = true
-			elseif targetName == "DIO" and npc.Name == "DIO" then
-				matchFound = true
-			elseif string.lower(npc.Name) == string.lower(targetName) then
-				matchFound = true
-			end
-
-			if matchFound then
-				local health = getNPCHealth(npc)
-				local root = getNPCHRP(npc)
-				if health and health.Value > 0 and root then
-					local dist = (playerHrp.Position - root.Position).Magnitude
-					if dist < shortestDist then
-						shortestDist = dist
-						closest = npc
-					end
-				end
-			end
-		end
-	end
-	return closest
-end
-
-RunService.Heartbeat:Connect(function()
-	if not combatEnabled or not isRunning then return end
-	local _, humanoid, hrp = getCharacterElements()
-	if not humanoid or humanoid.Health <= 0 or not hrp or not hrp.Parent then
-		setCombatState(false)
-		return
-	end
-
-	local stand = getStandMorph()
-	if not stand then
-		currentNPC = nil
-		startQLoop()
-		return
-	end
-	qLoopRunning = false
-
-	if currentNPC then
-		local health = getNPCHealth(currentNPC)
-		local npcHrp = getNPCHRP(currentNPC)
-		if not health or health.Value <= 0 or not npcHrp or not npcHrp.Parent then
-			currentNPC = nil
-		end
-	end
-
-	if not currentNPC then
-		currentNPC = findNearestTargetNPC()
-		if not currentNPC then
-			returnStandToPlayer()
-			return
-		end
-	end
-
-	local npcHrp = getNPCHRP(currentNPC)
-	if npcHrp then
-		targetNpcHrp = npcHrp
-		
-		if stand and stand.PrimaryPart then
-			camera.CameraSubject = stand.PrimaryPart
-		end
-
-		local playerTargetCFrame = npcHrp.CFrame - Vector3.new(0, CONFIG.PLAYER_BELOW, 0)
-		pcall(function()
-			hrp.AssemblyLinearVelocity = Vector3.zero
-			hrp.AssemblyAngularVelocity = Vector3.zero
-			hrp.CFrame = playerTargetCFrame
-		end)
-
-		sendNativeM1()
-	end
-end)
-
-local function walkToNPC()
-	currentStatus = "Viajando: " .. selectedMission.npcName
-	setCombatState(false)
-
-	local _, _, root = getCharacterElements()
-	if not root then return false end
-
-	pcall(function() root.Anchored = false end)
-	local distance = (root.Position - selectedMission.npcPos).Magnitude
-	if distance <= 5 then return true end
-
-	local duration = distance / CONFIG.TWEEN_SPEED
-	pcall(function()
-		root.AssemblyLinearVelocity = Vector3.zero
-		root.AssemblyAngularVelocity = Vector3.zero
-	end)
-
-	local tween = TweenService:Create(root, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
-		CFrame = CFrame.new(selectedMission.npcPos + Vector3.new(0, 1.5, 0))
-	})
-
-	local finished = false
-	local connection = tween.Completed:Connect(function() finished = true end)
-	tween:Play()
-
-	local success = fastWait(function() return finished end, duration + 2)
-	connection:Disconnect()
-
-	if not success then
-		tween:Cancel()
-		return false
-	end
-
-	pcall(function() root.Anchored = true end)
-	task.wait(0.2)
-	pcall(function() root.Anchored = false end)
-	return true
-end
-
-local function triggerPrompt()
-	currentStatus = "Falando com: " .. selectedMission.npcName
-	local folder = workspace:FindFirstChild("Dialogues")
-	local npc = folder and folder:FindFirstChild(selectedMission.npcName)
-	local prompt = npc and npc:FindFirstChildOfClass("ProximityPrompt")
-	if not prompt then return false end
-
-	prompt.RequiresLineOfSight = false
-	prompt.HoldDuration = 0
-
-	local ok = pcall(function() fireproximityprompt(prompt) end)
-	if not ok then
-		pcall(function()
-			prompt:InputHoldBegin()
-			task.wait(0.05)
-			prompt:InputHoldEnd()
-		end)
-	end
-	task.wait(0.4)
-	return true
-end
-
-local function clearAllDialogues()
-	currentStatus = "Aceitando..."
-
-	local menuApareceu = fastWait(function() return isDialogueGuiActive() end, 3)
-	if not menuApareceu then return false end
-
-	local char = player.Character
-	local remoteEvent = char and char:FindFirstChild("RemoteEvent")
-
-	if remoteEvent then
-		pcall(function()
-			remoteEvent:FireServer("EndDialogue", {
-				["NPC"] = selectedMission.npcName,
-				["Option"] = "Option1",
-				["Dialogue"] = "Dialogue1"
-			})
-		end)
-	end
-
-	local dialogueGui = playerGui:FindFirstChild("DialogueGui") or playerGui:FindFirstChild("Dialogue")
-	if dialogueGui then
-		local attempts = 0
-		while isRunning and isDialogueGuiActive() and attempts < 15 do
-			pcall(function()
-				local frame = dialogueGui:FindFirstChild("Frame")
-				if frame then
-					local options = frame:FindFirstChild("Options")
-					local clickContinue = frame:FindFirstChild("ClickContinue")
-
-					if options and options:FindFirstChild("Option1") then
-						local btn = options.Option1:FindFirstChildOfClass("TextButton") or options.Option1
-						if firesignal then
-							firesignal(btn.MouseButton1Click)
-							firesignal(btn.Activated)
-						end
-					end
-
-					if clickContinue then
-						if firesignal then
-							firesignal(clickContinue.MouseButton1Click)
-							firesignal(clickContinue.Activated)
-						end
-					end
-				end
-			end)
-
-			attempts = attempts + 1
-			task.wait(CONFIG.SPAM_DELAY)
-		end
-	end
-
-	task.wait(0.3)
-	return true
-end
-
-local function executeHuntingFarming()
-	currentStatus = "Caçando: " .. selectedMission.combatNpc
-	setCombatState(true)
-	task.wait(1.0)
-
-	local killsDone = 0
-	while isRunning and killsDone < selectedMission.killsNeeded do
-		local target = findNearestTargetNPC()
-		if target then
-			local health = getNPCHealth(target)
-			while isRunning and target and target.Parent and health and health.Value > 0 do
-				task.wait(0.2)
-			end
-			killsDone = killsDone + 1
-		else
-			task.wait(0.5)
-		end
-	end
-
-	task.wait(0.2)
-	setCombatState(false)
-	return true
-end
-
-local function runMasterFarmCycle()
-	local steps = { walkToNPC, triggerPrompt, clearAllDialogues, executeHuntingFarming }
-	for _, step in ipairs(steps) do
-		if not isRunning then return end
-		local success = step()
-		if not success then
-			setCombatState(false)
-			task.wait(1.5)
-			return
-		end
-	end
-end
-
--- GUI PRINCIPAL SIGIL SOUTH SIDE
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "NorthSigilHubGui"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = playerGui
-
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 500, 0, 380)
-MainFrame.Position = UDim2.new(0.3, 0, 0.25, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(12, 14, 18)
-MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
-MainFrame.Parent = ScreenGui
-
-local MainStroke = Instance.new("UIStroke")
-MainStroke.Color = Color3.fromRGB(220, 230, 245)
-MainStroke.Thickness = 2
-MainStroke.Parent = MainFrame
-
-local SideBar = Instance.new("Frame")
-SideBar.Name = "SideBar"
-SideBar.Size = UDim2.new(0, 50, 1, 0)
-SideBar.Position = UDim2.new(0, 0, 0, 0)
-SideBar.BackgroundColor3 = Color3.fromRGB(235, 240, 250)
-SideBar.BorderSizePixel = 0
-SideBar.Parent = MainFrame
-
-local SideTitle = Instance.new("TextLabel")
-SideTitle.Name = "SideTitle"
-SideTitle.Size = UDim2.new(1, 0, 1, 0)
-SideTitle.BackgroundTransparency = 1
-SideTitle.Text = "NORTH SIDE"
-SideTitle.TextColor3 = Color3.fromRGB(25, 75, 160)
-SideTitle.Font = Enum.Font.Garamond
-SideTitle.TextSize = 50
-SideTitle.Rotation = -90
-SideTitle.Parent = SideBar
-
-local ContentFrame = Instance.new("Frame")
-ContentFrame.Size = UDim2.new(1, -50, 1, 0)
-ContentFrame.Position = UDim2.new(0, 50, 0, 0)
-ContentFrame.BackgroundTransparency = 1
-ContentFrame.Parent = MainFrame
-
-local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, 0, 0, 45)
-Header.BackgroundColor3 = Color3.fromRGB(18, 22, 30)
-Header.BorderSizePixel = 0
-Header.Parent = ContentFrame
-
-local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(1, -15, 0, 22)
-TitleLabel.Position = UDim2.new(0, 15, 0, 3)
-TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "NORTH_. AUTO FARM"
-TitleLabel.TextColor3 = Color3.fromRGB(240, 245, 255)
-TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.TextSize = 14
-TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-TitleLabel.Parent = Header
-
-local StatusText = Instance.new("TextLabel")
-StatusText.Size = UDim2.new(1, -15, 0, 18)
-StatusText.Position = UDim2.new(0, 15, 0, 23)
-StatusText.BackgroundTransparency = 1
-StatusText.Text = "Status: Aguardando"
-StatusText.TextColor3 = Color3.fromRGB(110, 160, 235)
-StatusText.Font = Enum.Font.Gotham
-StatusText.TextSize = 11
-StatusText.TextXAlignment = Enum.TextXAlignment.Left
-StatusText.Parent = Header
-
-local ScrollContainer = Instance.new("ScrollingFrame")
-ScrollContainer.Size = UDim2.new(1, -20, 1, -105)
-ScrollContainer.Position = UDim2.new(0, 10, 0, 52)
-ScrollContainer.BackgroundTransparency = 1
-ScrollContainer.BorderSizePixel = 0
-ScrollContainer.ScrollBarThickness = 3
-ScrollContainer.ScrollBarImageColor3 = Color3.fromRGB(70, 120, 210)
-ScrollContainer.CanvasSize = UDim2.new(0, 0, 0, #NPC_LIST * 68)
-ScrollContainer.Parent = ContentFrame
-
-local UIList = Instance.new("UIListLayout")
-UIList.Padding = UDim.new(0, 6)
-UIList.Parent = ScrollContainer
-
-local ActivateBtn = Instance.new("TextButton")
-ActivateBtn.Size = UDim2.new(1, -20, 0, 38)
-ActivateBtn.Position = UDim2.new(0, 10, 1, -45)
-ActivateBtn.BackgroundColor3 = Color3.fromRGB(30, 90, 200)
-ActivateBtn.Text = "LIGAR FARM"
-ActivateBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ActivateBtn.Font = Enum.Font.GothamBold
-ActivateBtn.TextSize = 13
-ActivateBtn.Parent = ContentFrame
-
-local BtnStroke = Instance.new("UIStroke")
-BtnStroke.Color = Color3.fromRGB(200, 220, 255)
-BtnStroke.Thickness = 1
-BtnStroke.Parent = ActivateBtn
-
-local itemButtons = {}
-
-for i, item in ipairs(NPC_LIST) do
-	local Card = Instance.new("Frame")
-	Card.Size = UDim2.new(1, -6, 0, 62)
-	Card.BackgroundColor3 = (item == selectedMission) and Color3.fromRGB(25, 45, 80) or Color3.fromRGB(18, 22, 28)
-	Card.BorderSizePixel = 0
-	Card.Parent = ScrollContainer
-
-	local CardStroke = Instance.new("UIStroke")
-	CardStroke.Color = (item == selectedMission) and Color3.fromRGB(100, 160, 255) or Color3.fromRGB(40, 50, 65)
-	CardStroke.Thickness = 1
-	CardStroke.Parent = Card
-
-	local InfoText = Instance.new("TextLabel")
-	InfoText.Size = UDim2.new(0.68, 0, 1, -8)
-	InfoText.Position = UDim2.new(0, 10, 0, 4)
-	InfoText.BackgroundTransparency = 1
-	InfoText.TextColor3 = Color3.fromRGB(220, 225, 235)
-	InfoText.Font = Enum.Font.Gotham
-	InfoText.TextSize = 11
-	InfoText.TextXAlignment = Enum.TextXAlignment.Left
-	InfoText.TextYAlignment = Enum.TextYAlignment.Top
-	InfoText.Text = string.format(
-		"<b>%s</b>\nNPC: <font color='#80B5FF'>%s</font> | Alvo: <font color='#FF8080'>%s</font> (x%d)",
-		item.name, item.npcName, item.combatNpc, item.killsNeeded
-	)
-	InfoText.RichText = true
-	InfoText.Parent = Card
-
-	local SelectBtn = Instance.new("TextButton")
-	SelectBtn.Size = UDim2.new(0.28, 0, 0, 36)
-	SelectBtn.Position = UDim2.new(0.7, -4, 0.5, -18)
-	SelectBtn.BackgroundColor3 = Color3.fromRGB(230, 235, 245)
-	SelectBtn.Text = "SELECIONAR"
-	SelectBtn.TextColor3 = Color3.fromRGB(15, 25, 45)
-	SelectBtn.Font = Enum.Font.GothamBold
-	SelectBtn.TextSize = 10
-	SelectBtn.Parent = Card
-
-	itemButtons[i] = {card = Card, stroke = CardStroke}
-
-	SelectBtn.MouseButton1Click:Connect(function()
-		selectedMission = item
-		for _, data in pairs(itemButtons) do
-			data.card.BackgroundColor3 = Color3.fromRGB(18, 22, 28)
-			data.stroke.Color = Color3.fromRGB(40, 50, 65)
-		end
-		Card.BackgroundColor3 = Color3.fromRGB(25, 45, 80)
-		CardStroke.Color = Color3.fromRGB(100, 160, 255)
-	end)
-end
-
--- DragClick
-local dragging, dragStart, startPos
-Header.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-		dragStart = input.Position
-		startPos = MainFrame.Position
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then dragging = false end
-		end)
-	end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - dragStart
-		MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-	end
-end)
-
-ActivateBtn.MouseButton1Click:Connect(function()
-	isRunning = not isRunning
-
-	if isRunning then
-		ActivateBtn.Text = "DESLIGAR FARM"
-		ActivateBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
-		task.spawn(function()
-			while isRunning do
-				runMasterFarmCycle()
-				task.wait(1.0)
-			end
-			currentStatus = "Aguardando"
-		end)
-	else
-		ActivateBtn.Text = "LIGAR FARM"
-		ActivateBtn.BackgroundColor3 = Color3.fromRGB(30, 90, 200)
-		setCombatState(false)
-		destroyAntiFallPlatform()
-	end
-end)
-
-task.spawn(function()
-	while ScreenGui.Parent do
-		StatusText.Text = "Status: " .. currentStatus
-		task.wait(0.2)
-	end
-end)
-
-print("✅ Script e sistema de memorização de aviso carregados com sucesso!")
+CreateGUI()
