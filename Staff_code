@@ -12,9 +12,9 @@
 
 local ProtectionConfig = {
     -- 🔴 CRITICAL: This MUST exactly match the 'Secret' value in your Key System's Config!
-    -- If your Key System has: Secret = "NORTH_STAFF_CODE_)#IJ#NJikk3kd9(#l1lz9asj2N2000238dBN3nm2dls+wk32as=-2]sdk2nmc0_wdm2amsoco3of9_2mpornogay02mmdkms_23br"
-    -- Then this must also be: SecretKey = "NORTH_STAFF_CODE_)#IJ#NJikk3kd9(#l1lz9asj2N2000238dBN3nm2dls+wk32as=-2]sdk2nmc0_wdm2amsoco3of9_2mpornogay02mmdkms_23br"
-    SecretKey = "NORTH_STAFF_CODE_)#IJ#NJikk3kd9(#l1lz9asj2N2000238dBN3nm2dls+wk32as=-2]sdk2nmc0_wdm2amsoco3of9_2mpornogay02mmdkms_23br",
+    -- If your Key System has: Secret = "NORTH_STAFF_CODE_)#IJ#NJikk3kd9(#l1lz"
+    -- Then this must also be: SecretKey = "NORTH_STAFF_CODE_)#IJ#NJikk3kd9(#l1lz"
+    SecretKey = "NORTH_STAFF_CODE_)#IJ#NJikk3kd9(#l1lz",
     
     -- The name of your Hub (shown in the kick message if they try to bypass)
     HubName = "North_."
