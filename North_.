@@ -220,6 +220,8 @@ local AVAILABLE_ITEMS = {
 	"Zepellin's Headband",
 	"Deo's Diary",
 	"Stone Mask",
+}
+
 local NPC_LIST = {
 	{
 		name = "Thug (Lvl 1+)",
