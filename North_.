@@ -408,6 +408,9 @@ local function runItemFarmCycle()
 	end
 end
 
+-- ============================================================================= --
+-- CORREÇÃO DO STAND MORPH & RENDERSTEPPED (NORTH_.)
+-- ============================================================================= --
 RunService.RenderStepped:Connect(function()
 	if isRunning then
 		if player.Character then
@@ -428,6 +431,27 @@ RunService.RenderStepped:Connect(function()
 				antiFallPlatform.CFrame = hrp.CFrame - Vector3.new(0, 3.5, 0)
 			end
 		end
+
+		-- Lógica corrigida para colar o Stand Morph no NPC alvo
+		if targetNpcHrp and targetNpcHrp.Parent then
+			local stand = getStandMorph()
+			if stand then
+				-- Se o stand tiver uma PrimaryPart ou Torso principal válido
+				local standRoot = stand.PrimaryPart or stand:FindFirstChild("HumanoidRootPart") or stand:FindFirstChild("Torso")
+				if standRoot then
+					local targetCFrame = targetNpcHrp.CFrame * CFrame.new(0, CONFIG.FLOAT_HEIGHT, CONFIG.DISTANCE_BEHIND)
+					
+					-- Força a posição e zera a velocidade para travar o stand no NPC
+					pcall(function()
+						standRoot.AssemblyLinearVelocity = Vector3.zero
+						standRoot.AssemblyAngularVelocity = Vector3.zero
+						stand:PivotTo(targetCFrame)
+					end)
+				end
+			end
+		end
+	end
+end)
 
 		if targetNpcHrp and targetNpcHrp.Parent then
 			local stand = getStandMorph()
