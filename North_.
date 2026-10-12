@@ -1,5 +1,5 @@
 -- ============================================================================= --
--- NORTH_. AUTO FARM - SIGIL SOUTH SIDE EDITION (MOBILE M1 COMBO HITBOX FIX - 2026)
+-- NORTH_. AUTO FARM - SIGIL SOUTH SIDE EDITION (REMOTE M1 + STAND MORPH FIX)
 -- ============================================================================= --
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -291,10 +291,11 @@ local NPC_LIST = {
 local CONFIG = {
 	TWEEN_SPEED = 120,
 	PLAYER_BELOW = 17,
-	FLOAT_HEIGHT = 0.2,       -- Alinhamento de altura exato para o peito/torso
-	DISTANCE_BEHIND = 3.0,    -- Distância ideal para a hitbox de combo no YBA (Mobile)
+	FLOAT_HEIGHT = 2,         -- Altura do Stand Morph (KNPC)
+	DISTANCE_BEHIND = 3,      -- Distância exata do Stand Morph (KNPC)
 	Q_INTERVAL = 0.25,
 	SPAM_DELAY = 0.08,
+	M1_INTERVAL = 0.15,       -- Intervalo de disparo do Remote M1
 }
 
 local isRunning = false
@@ -307,6 +308,7 @@ local currentNPC = nil
 local targetNpcHrp = nil
 local antiFallPlatform = nil
 local qLoopRunning = false
+local remoteM1Running = false
 
 local function getCharacterElements()
 	local char = player.Character
@@ -405,11 +407,10 @@ local function runItemFarmCycle()
 end
 
 -- ============================================================================= --
--- RENDERSTEPPED: ORIENTAÇÃO DIRETA E FIXAÇÃO DE HITBOX PARA COMBO NO MOBILE
+-- MOTOR DE COMBATE: STAND MORPH EXATO + ATAQUE VIA REMOTE M1
 -- ============================================================================= --
 RunService.RenderStepped:Connect(function()
 	if isRunning then
-		-- Desativa colisão apenas no Personagem principal
 		if player.Character then
 			for _, part in pairs(player.Character:GetChildren()) do
 				if part:IsA("BasePart") then part.CanCollide = false end
@@ -429,25 +430,18 @@ RunService.RenderStepped:Connect(function()
 			end
 		end
 
-		-- Trava o Stand e força o visual/ângulo de ataque na direção do Mob
 		if targetNpcHrp and targetNpcHrp.Parent then
 			local stand = getStandMorph()
 			if stand then
-				local standRoot = stand.PrimaryPart or stand:FindFirstChild("HumanoidRootPart") or stand:FindFirstChild("Torso")
 				local npcTorso = targetNpcHrp.Parent:FindFirstChild("Torso") 
 					or targetNpcHrp.Parent:FindFirstChild("UpperTorso") 
 					or targetNpcHrp
 
-				if standRoot and npcTorso then
-					-- Posicionamento exato atrás do NPC
-					local basePos = npcTorso.CFrame * Vector3.new(0, CONFIG.FLOAT_HEIGHT, CONFIG.DISTANCE_BEHIND)
-					
-					-- Força a orientação do Stand a OLHAR diretamente para o centro do NPC
-					local targetCFrame = CFrame.lookAt(basePos, npcTorso.Position)
-
+				if npcTorso then
+					local standTargetCFrame = npcTorso.CFrame * CFrame.new(0, CONFIG.FLOAT_HEIGHT, CONFIG.DISTANCE_BEHIND)
+					local finalCFrame = CFrame.lookAt(standTargetCFrame.Position, npcTorso.Position)
 					pcall(function()
-						standRoot.CFrame = targetCFrame
-						stand:PivotTo(targetCFrame)
+						stand:PivotTo(finalCFrame)
 					end)
 				end
 			end
@@ -462,7 +456,7 @@ local function destroyAntiFallPlatform()
 	end
 end
 
-local function sendNativeM1()
+local function sendRemoteM1()
 	local char = player.Character
 	if not char then return end
 	pcall(function()
@@ -470,6 +464,18 @@ local function sendNativeM1()
 		if remoteFunction then
 			remoteFunction:InvokeServer("Attack", "m1")
 		end
+	end)
+end
+
+local function startRemoteM1Loop()
+	if remoteM1Running then return end
+	remoteM1Running = true
+	task.spawn(function()
+		while remoteM1Running and combatEnabled and isRunning do
+			sendRemoteM1()
+			task.wait(CONFIG.M1_INTERVAL)
+		end
+		remoteM1Running = false
 	end)
 end
 
@@ -495,10 +501,6 @@ local function returnStandToPlayer()
 	local _, humanoid, hrp = getCharacterElements()
 	if stand and hrp and hrp.Parent then
 		pcall(function()
-			local standRoot = stand.PrimaryPart or stand:FindFirstChild("HumanoidRootPart") or stand:FindFirstChild("Torso")
-			if standRoot then
-				standRoot.CFrame = hrp.CFrame * CFrame.new(0, 0, 3)
-			end
 			stand:PivotTo(hrp.CFrame * CFrame.new(0, 0, 3))
 		end)
 	end
@@ -511,9 +513,11 @@ local function setCombatState(wantEnabled)
 		if not humanoid or humanoid.Health <= 0 then return end
 		combatEnabled = true
 		currentNPC = nil
+		startRemoteM1Loop()
 		if not getStandMorph() then startQLoop() end
 	else
 		combatEnabled = false
+		remoteM1Running = false
 		qLoopRunning = false
 		returnStandToPlayer()
 	end
@@ -587,13 +591,15 @@ RunService.Heartbeat:Connect(function()
 	local npcHrp = getNPCHRP(currentNPC)
 	if npcHrp then
 		targetNpcHrp = npcHrp
-		local playerTargetCFrame = npcHrp.CFrame - Vector3.new(0, CONFIG.PLAYER_BELOW, 0)
+		local npcHumanoid = currentNPC:FindFirstChildOfClass("Humanoid")
+		if npcHumanoid then camera.CameraSubject = npcHumanoid end
+
+		local playerTargetCFrame = npcHrp.CFrame * CFrame.new(0, -CONFIG.PLAYER_BELOW, 0)
 		pcall(function()
 			hrp.AssemblyLinearVelocity = Vector3.zero
 			hrp.AssemblyAngularVelocity = Vector3.zero
 			hrp.CFrame = playerTargetCFrame
 		end)
-		sendNativeM1()
 	end
 end)
 
@@ -1056,4 +1062,4 @@ task.spawn(function()
 	end
 end)
 
-print("✅ Correção da Hitbox e Orientação do Combo M1 no Mobile aplicada com sucesso!")
+print("✅ North_. atualizado com Remote M1 + Stand Morph exato do KNPC!")
