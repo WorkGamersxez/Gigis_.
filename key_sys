@@ -150,7 +150,7 @@ end
 -------------------------------------------------------------------------------
 
 -- ============================================================================= --
--- NORTH_. KEY SYSTEM - SIGIL SOUTH SIDE EDITION (2026)
+-- NORTH_. KEY SYSTEM - SIGIL SOUTH SIDE EDITION (TEXT SIZE 50 & GARAMOND)
 -- ============================================================================= --
 local function StartMainScript()
     local player = game:GetService("Players").LocalPlayer
@@ -177,11 +177,11 @@ local function CreateGUI()
     ScreenGui.Name = "OYB_KeySystem"
     ScreenGui.ResetOnSpawn = false
 
-    -- FRAME PRINCIPAL (TEMA DARK / SIGIL SOUTH SIDE)
+    -- FRAME PRINCIPAL
     local MainFrame = Instance.new("Frame", ScreenGui)
     MainFrame.Name = "MainFrame"
-    MainFrame.Size = UDim2.new(0, 440, 0, 360)
-    MainFrame.Position = UDim2.new(0.5, -220, 0.5, -180)
+    MainFrame.Size = UDim2.new(0, 480, 0, 380)
+    MainFrame.Position = UDim2.new(0.5, -240, 0.5, -190)
     MainFrame.BackgroundColor3 = Color3.fromRGB(12, 14, 18)
     MainFrame.BorderSizePixel = 0
     MainFrame.Active = true
@@ -191,35 +191,38 @@ local function CreateGUI()
     MainStroke.Color = Color3.fromRGB(220, 230, 245)
     MainStroke.Thickness = 2
 
-    -- FAIXA LATERAL VERTICAL (BRANCA / AZUL)
+    -- FAIXA LATERAL VERTICAL (Aumentada levemente para acomodar o texto com folga)
     local SideBar = Instance.new("Frame", MainFrame)
     SideBar.Name = "SideBar"
-    SideBar.Size = UDim2.new(0, 50, 1, 0)
+    SideBar.Size = UDim2.new(0, 60, 1, 0)
     SideBar.Position = UDim2.new(0, 0, 0, 0)
     SideBar.BackgroundColor3 = Color3.fromRGB(235, 240, 250)
     SideBar.BorderSizePixel = 0
+    SideBar.ClipsDescendants = true -- Impede que o texto vaze para fora da barra
 
-    -- TEXTO DA BARRA LATERAL (NORTH KEY SYSTEM)
+    -- TEXTO DA BARRA LATERAL (CORRIGIDO PARA NÃO VAZAR)
     local SideTitle = Instance.new("TextLabel", SideBar)
     SideTitle.Name = "SideTitle"
     SideTitle.Size = UDim2.new(1, 0, 1, 0)
+    SideTitle.Position = UDim2.new(0, 0, 0, 0)
     SideTitle.BackgroundTransparency = 1
     SideTitle.Text = "NORTH KEY SYSTEM"
     SideTitle.TextColor3 = Color3.fromRGB(25, 75, 160)
     SideTitle.Font = Enum.Font.Garamond
     SideTitle.TextSize = 50
+    SideTitle.TextScaled = true -- Ajusta automaticamente a escala para preencher a barra perfeitamente sem vazar
     SideTitle.Rotation = -90
 
     -- PAINEL DE CONTEÚDO PRINCIPAL (DIREITA)
     local ContentFrame = Instance.new("Frame", MainFrame)
     ContentFrame.Name = "ContentFrame"
-    ContentFrame.Size = UDim2.new(1, -50, 1, 0)
-    ContentFrame.Position = UDim2.new(0, 50, 0, 0)
+    ContentFrame.Size = UDim2.new(1, -60, 1, 0)
+    ContentFrame.Position = UDim2.new(0, 60, 0, 0)
     ContentFrame.BackgroundTransparency = 1
 
     -- CABEÇALHO / HEADER
     local Header = Instance.new("Frame", ContentFrame)
-    Header.Size = UDim2.new(1, 0, 0, 45)
+    Header.Size = UDim2.new(1, 0, 0, 50)
     Header.BackgroundColor3 = Color3.fromRGB(18, 22, 30)
     Header.BorderSizePixel = 0
 
@@ -229,8 +232,9 @@ local function CreateGUI()
     TitleLabel.BackgroundTransparency = 1
     TitleLabel.Text = Config.HubName or "NORTH_. KEY SYSTEM"
     TitleLabel.TextColor3 = Color3.fromRGB(240, 245, 255)
-    TitleLabel.Font = Enum.Font.GothamBold
-    TitleLabel.TextSize = 14
+    TitleLabel.Font = Enum.Font.Garamond
+    TitleLabel.TextSize = 50
+    TitleLabel.TextScaled = true
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
     -- BOTÃO FECHAR (X)
@@ -240,38 +244,41 @@ local function CreateGUI()
     CloseBtn.BackgroundTransparency = 1
     CloseBtn.Text = "X"
     CloseBtn.TextColor3 = Color3.fromRGB(230, 70, 70)
-    CloseBtn.Font = Enum.Font.GothamBold
-    CloseBtn.TextSize = 16
+    CloseBtn.Font = Enum.Font.Garamond
+    CloseBtn.TextSize = 50
+    CloseBtn.TextScaled = true
     CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
 
     -- DESCRIÇÃO / TEXTO PROMO
     local PromoText = Instance.new("TextLabel", ContentFrame)
-    PromoText.Size = UDim2.new(1, -30, 0, 35)
-    PromoText.Position = UDim2.new(0, 15, 0, 50)
+    PromoText.Size = UDim2.new(1, -30, 0, 40)
+    PromoText.Position = UDim2.new(0, 15, 0, 55)
     PromoText.BackgroundTransparency = 1
     PromoText.Text = Config.HubDescription or "Insira a chave para acessar o script."
     PromoText.TextColor3 = Color3.fromRGB(110, 160, 235)
-    PromoText.Font = Enum.Font.Gotham
-    PromoText.TextSize = 12
+    PromoText.Font = Enum.Font.Garamond
+    PromoText.TextSize = 50
+    PromoText.TextScaled = true
     PromoText.TextWrapped = true
     PromoText.TextXAlignment = Enum.TextXAlignment.Left
 
-    local currentYOffset = 90
+    local currentYOffset = 100
 
-    -- BOTÕES DE REDES SOCIAIS (DISCORD, INSTAGRAM, YOUTUBE)
+    -- BOTÕES DE REDES SOCIAIS
     if Config.ShowDiscord then
         local DiscordBtn = Instance.new("TextButton", ContentFrame)
-        DiscordBtn.Size = UDim2.new(1, -30, 0, 32)
+        DiscordBtn.Size = UDim2.new(1, -30, 0, 36)
         DiscordBtn.Position = UDim2.new(0, 15, 0, currentYOffset)
-        DiscordBtn.Text = "      JOIN DISCORD"
-        DiscordBtn.Font = Enum.Font.GothamBold
-        DiscordBtn.TextSize = 11
+        DiscordBtn.Text = "JOIN DISCORD"
+        DiscordBtn.Font = Enum.Font.Garamond
+        DiscordBtn.TextSize = 50
+        DiscordBtn.TextScaled = true
         DiscordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
         DiscordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 
         local DiscordIcon = Instance.new("ImageLabel", DiscordBtn)
-        DiscordIcon.Size = UDim2.new(0, 18, 0, 18)
-        DiscordIcon.Position = UDim2.new(0.08, 0, 0.5, -9)
+        DiscordIcon.Size = UDim2.new(0, 20, 0, 20)
+        DiscordIcon.Position = UDim2.new(0.05, 0, 0.5, -10)
         DiscordIcon.BackgroundTransparency = 1
         DiscordIcon.Image = "rbxassetid://18505728201"
         
@@ -288,22 +295,23 @@ local function CreateGUI()
             end
         end)
         
-        currentYOffset = currentYOffset + 38
+        currentYOffset = currentYOffset + 42
     end
 
     if Config.ShowInstagram then
         local InstaBtn = Instance.new("TextButton", ContentFrame)
-        InstaBtn.Size = UDim2.new(1, -30, 0, 32)
+        InstaBtn.Size = UDim2.new(1, -30, 0, 36)
         InstaBtn.Position = UDim2.new(0, 15, 0, currentYOffset)
-        InstaBtn.Text = "      FOLLOW INSTAGRAM"
-        InstaBtn.Font = Enum.Font.GothamBold
-        InstaBtn.TextSize = 11
+        InstaBtn.Text = "FOLLOW INSTAGRAM"
+        InstaBtn.Font = Enum.Font.Garamond
+        InstaBtn.TextSize = 50
+        InstaBtn.TextScaled = true
         InstaBtn.BackgroundColor3 = Color3.fromRGB(225, 48, 108)
         InstaBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 
         local InstaIcon = Instance.new("ImageLabel", InstaBtn)
-        InstaIcon.Size = UDim2.new(0, 18, 0, 18)
-        InstaIcon.Position = UDim2.new(0.08, 0, 0.5, -9)
+        InstaIcon.Size = UDim2.new(0, 20, 0, 20)
+        InstaIcon.Position = UDim2.new(0.05, 0, 0.5, -10)
         InstaIcon.BackgroundTransparency = 1
         InstaIcon.Image = "rbxassetid://18355586382"
         
@@ -316,22 +324,23 @@ local function CreateGUI()
             end
         end)
         
-        currentYOffset = currentYOffset + 38
+        currentYOffset = currentYOffset + 42
     end
     
     if Config.ShowYoutube then
         local YTBtn = Instance.new("TextButton", ContentFrame)
-        YTBtn.Size = UDim2.new(1, -30, 0, 32)
+        YTBtn.Size = UDim2.new(1, -30, 0, 36)
         YTBtn.Position = UDim2.new(0, 15, 0, currentYOffset)
-        YTBtn.Text = "      SUBSCRIBE YOUTUBE"
-        YTBtn.Font = Enum.Font.GothamBold
-        YTBtn.TextSize = 11
+        YTBtn.Text = "SUBSCRIBE YOUTUBE"
+        YTBtn.Font = Enum.Font.Garamond
+        YTBtn.TextSize = 50
+        YTBtn.TextScaled = true
         YTBtn.BackgroundColor3 = Color3.fromRGB(210, 40, 40)
         YTBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 
         local YTIcon = Instance.new("ImageLabel", YTBtn)
-        YTIcon.Size = UDim2.new(0, 18, 0, 18)
-        YTIcon.Position = UDim2.new(0.08, 0, 0.5, -9)
+        YTIcon.Size = UDim2.new(0, 20, 0, 20)
+        YTIcon.Position = UDim2.new(0.05, 0, 0.5, -10)
         YTIcon.BackgroundTransparency = 1
         YTIcon.Image = "rbxassetid://82532989017804"
         
@@ -344,17 +353,18 @@ local function CreateGUI()
             end
         end)
         
-        currentYOffset = currentYOffset + 38
+        currentYOffset = currentYOffset + 42
     end
 
     -- CAMPO DE ENTRADA DA KEY
     local KeyInput = Instance.new("TextBox", ContentFrame)
-    KeyInput.Size = UDim2.new(1, -30, 0, 36)
+    KeyInput.Size = UDim2.new(1, -30, 0, 38)
     KeyInput.Position = UDim2.new(0, 15, 0, currentYOffset + 10)
     KeyInput.PlaceholderText = "Insira sua Key..."
     KeyInput.Text = ""
-    KeyInput.Font = Enum.Font.GothamSemibold
-    KeyInput.TextSize = 12
+    KeyInput.Font = Enum.Font.Garamond
+    KeyInput.TextSize = 50
+    KeyInput.TextScaled = true
     KeyInput.BackgroundColor3 = Color3.fromRGB(18, 22, 28)
     KeyInput.TextColor3 = Color3.fromRGB(240, 245, 255)
 
@@ -364,20 +374,22 @@ local function CreateGUI()
 
     -- BOTÕES VERIFY / GET KEY
     local VerifyBtn = Instance.new("TextButton", ContentFrame)
-    VerifyBtn.Size = UDim2.new(0.48, -5, 0, 36)
-    VerifyBtn.Position = UDim2.new(0, 15, 0, currentYOffset + 55)
+    VerifyBtn.Size = UDim2.new(0.48, -5, 0, 38)
+    VerifyBtn.Position = UDim2.new(0, 15, 0, currentYOffset + 58)
     VerifyBtn.Text = "VERIFICAR"
-    VerifyBtn.Font = Enum.Font.GothamBold
-    VerifyBtn.TextSize = 11
+    VerifyBtn.Font = Enum.Font.Garamond
+    VerifyBtn.TextSize = 50
+    VerifyBtn.TextScaled = true
     VerifyBtn.BackgroundColor3 = Color3.fromRGB(30, 90, 200)
     VerifyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 
     local GetKeyBtn = Instance.new("TextButton", ContentFrame)
-    GetKeyBtn.Size = UDim2.new(0.48, -5, 0, 36)
-    GetKeyBtn.Position = UDim2.new(0.52, 0, 0, currentYOffset + 55)
+    GetKeyBtn.Size = UDim2.new(0.48, -5, 0, 38)
+    GetKeyBtn.Position = UDim2.new(0.52, 0, 0, currentYOffset + 58)
     GetKeyBtn.Text = "PEGAR KEY"
-    GetKeyBtn.Font = Enum.Font.GothamBold
-    GetKeyBtn.TextSize = 11
+    GetKeyBtn.Font = Enum.Font.Garamond
+    GetKeyBtn.TextSize = 50
+    GetKeyBtn.TextScaled = true
     GetKeyBtn.BackgroundColor3 = Color3.fromRGB(230, 235, 245)
     GetKeyBtn.TextColor3 = Color3.fromRGB(15, 25, 45)
 
@@ -385,18 +397,17 @@ local function CreateGUI()
     local Status = Instance.new("TextLabel", ContentFrame)
     Status.Name = "StatusLabel"
     Status.Size = UDim2.new(1, -30, 0, 25)
-    Status.Position = UDim2.new(0, 15, 0, currentYOffset + 98)
+    Status.Position = UDim2.new(0, 15, 0, currentYOffset + 102)
     Status.BackgroundTransparency = 1
     Status.Text = "Aguardando entrada..."
     Status.TextColor3 = Color3.fromRGB(150, 160, 180)
-    Status.Font = Enum.Font.Gotham
-    Status.TextSize = 11
+    Status.Font = Enum.Font.Garamond
+    Status.TextSize = 50
+    Status.TextScaled = true
     Status.TextXAlignment = Enum.TextXAlignment.Left
 
-    -- AJUSTA A ALTURA AUTOMÁTICA DA JANELA
-    MainFrame.Size = UDim2.new(0, 440, 0, currentYOffset + 130)
+    MainFrame.Size = UDim2.new(0, 480, 0, currentYOffset + 138)
 
-    -- EVENTOS DOS BOTÕES
     VerifyBtn.MouseButton1Click:Connect(function()
         local key = KeyInput.Text
         if key == "" then Status.Text = "Insira uma Key!"; return end
@@ -427,7 +438,6 @@ local function CreateGUI()
         end
     end)
 
-    -- AUTO-VERIFICAÇÃO DE KEY SALVA
     if isfile and isfile(Config.KeyFileName) then
         local savedKey = readfile(Config.KeyFileName)
         if savedKey ~= "" then
