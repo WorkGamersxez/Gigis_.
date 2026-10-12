@@ -660,8 +660,8 @@ SideTitle.Size = UDim2.new(1, 0, 1, 0)
 SideTitle.BackgroundTransparency = 1
 SideTitle.Text = "NORTH SIDE"
 SideTitle.TextColor3 = Color3.fromRGB(25, 75, 160)
-SideTitle.Font = Enum.Font.PermanentMarker
-SideTitle.TextSize = 16
+SideTitle.Font = Enum.Font.Garamond
+SideTitle.TextSize = 50
 SideTitle.Rotation = -90
 SideTitle.Parent = SideBar
 
