@@ -13,7 +13,7 @@ local Config = {
     PlatoSecret     = "ec98ce7a-89d8-41a5-9e88-2031c7d97431", -- Your PlatoBoost Secret Key
 
     -- [2] Anti-Bypass / Global Secret Variable
-    Secret          = "NORTH_STAFF_CODE_)#IJ#NJikk3kd9(#l1lz9asj2N2000238dBN3nm2dls+wk32as=-2]sdk2nmc0_wdm2amsoco3of9_2mpornogay02mmdkms_23br", -- This makes the script ONLY run from the key script. Even if they copy the original obfuscated script to bypass the key, they won't be able to!
+    Secret          = "NORTH_STAFF_CODE_)#IJ#NJikk3kd9(#l1lz", -- This makes the script ONLY run from the key script. Even if they copy the original obfuscated script to bypass the key, they won't be able to!
     
     -- [3] Scripts & Links
     MainScriptURL   = "https://raw.githubusercontent.com/WorkGamersxez/Gigis_./refs/heads/main/North_.", -- The raw URL of your main script
