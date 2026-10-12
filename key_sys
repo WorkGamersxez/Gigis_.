@@ -9,35 +9,35 @@
 ]]
 local Config = {
     -- [1] PlatoBoost Settings
-    ServiceId       = 33865, -- Your PlatoBoost Service ID
-    PlatoSecret     = "ec98ce7a-89d8-41a5-9e88-2031c7d97431", -- Your PlatoBoost Secret Key
+    ServiceId         = 33865, -- Your PlatoBoost Service ID
+    PlatoSecret       = "ec98ce7a-89d8-41a5-9e88-2031c7d97431", -- Your PlatoBoost Secret Key
 
     -- [2] Anti-Bypass / Global Secret Variable
-    Secret          = "NORTH_STAFF_CODE_)#IJ#NJikk3kd9(#l1lz", -- This makes the script ONLY run from the key script. Even if they copy the original obfuscated script to bypass the key, they won't be able to!
+    Secret            = "NORTH_STAFF_CODE_)#IJ#NJikk3kd9(#l1lz", -- This makes the script ONLY run from the key script. Even if they copy the original obfuscated script to bypass the key, they won't be able to!
     
     -- [3] Scripts & Links
-    MainScriptURL   = "https://raw.githubusercontent.com/WorkGamersxez/Gigis_./refs/heads/main/North_.", -- The raw URL of your main script
+    MainScriptURL     = "https://raw.githubusercontent.com/WorkGamersxez/Gigis_./refs/heads/main/North_.", -- The raw URL of your main script
     
     -- [4] Social Media Settings (Set to true to show, false to hide)
-    ShowDiscord     = false,
-    DiscordURL      = "https://discord.gg/kT55J724BK",
+    ShowDiscord       = false,
+    DiscordURL        = "https://discord.gg/kT55J724BK",
     
-    ShowInstagram   = false,
-    InstagramURL    = "https://www.instagram.com/oyb0i/",
+    ShowInstagram     = false,
+    InstagramURL      = "https://www.instagram.com/oyb0i/",
     
-    ShowYoutube     = false,
-    YoutubeURL      = "https://www.youtube.com/channel/UCAlXXV1Hbvf7WbfXARuVtiQ",
+    ShowYoutube       = false,
+    YoutubeURL        = "https://www.youtube.com/channel/UCAlXXV1Hbvf7WbfXARuVtiQ",
 
     -- [5] File System
-    KeyFileName     = "NorthKeySys.txt", -- The name of the file where the valid key will be saved for auto-login
+    KeyFileName       = "NorthKeySys.txt", -- The name of the file where the valid key will be saved for auto-login
 
     -- [6] GUI Management
-    OldGuiName      = "NorthSigilHubGui", -- Name of the old GUI to destroy if it's already open
-    MainGuiName     = "NorthSigilHubGui", -- Name of the main script's GUI to check if it's already executing
+    OldGuiName        = "NorthSigilHubGui", -- Name of the old GUI to destroy if it's already open
+    MainGuiName       = "NorthSigilHubGui", -- Name of the main script's GUI to check if it's already executing
 
     -- [7] Hub Information & UI Text
-    HubName         = "North_.", -- The main title shown at the top of the GUI
-    HubDescription  = "Da pacem, Domine, in diebus nostris." -- The text shown below the title
+    HubName           = "North_.", -- The main title shown at the top of the GUI
+    HubDescription    = "Da pacem, Domine, in diebus nostris." -- The text shown below the title
 }
 
 -------------------------------------------------------------------------------
@@ -59,7 +59,6 @@ local function safeRequest(options)
     if success and type(response) == "table" then 
         return response 
     else 
-       
         return nil, "Connection Error: " .. tostring(response or "Unknown") 
     end
 end
@@ -131,7 +130,7 @@ local function redeemKey(key)
         local decoded = lDecode(response.Body)
         if decoded.success and decoded.data.valid then
             if useNonce then
-                if decoded.data.hash == lDigest("true" .. "-" .. nonce .. "-" .. Config.PlatoSecret) then 
+                if decoded.data.hash == lDigest("true"  .. "-" .. nonce .. "-" .. Config.PlatoSecret) then 
                     if writefile then writefile(Config.KeyFileName, key) end
                     return true, "Success" 
                 end
@@ -149,9 +148,6 @@ end
 --! GUI & MAIN SCRIPT EXECUTION
 -------------------------------------------------------------------------------
 
--- ============================================================================= --
--- NORTH_. KEY SYSTEM - SIGIL SOUTH SIDE EDITION (TEXT SIZE 50 & GARAMOND)
--- ============================================================================= --
 local function StartMainScript()
     local player = game:GetService("Players").LocalPlayer
     local pGui = player:WaitForChild("PlayerGui")
@@ -191,16 +187,16 @@ local function CreateGUI()
     MainStroke.Color = Color3.fromRGB(220, 230, 245)
     MainStroke.Thickness = 2
 
-    -- FAIXA LATERAL VERTICAL (Aumentada levemente para acomodar o texto com folga)
+    -- FAIXA LATERAL VERTICAL
     local SideBar = Instance.new("Frame", MainFrame)
     SideBar.Name = "SideBar"
     SideBar.Size = UDim2.new(0, 60, 1, 0)
     SideBar.Position = UDim2.new(0, 0, 0, 0)
     SideBar.BackgroundColor3 = Color3.fromRGB(235, 240, 250)
     SideBar.BorderSizePixel = 0
-    SideBar.ClipsDescendants = true -- Impede que o texto vaze para fora da barra
+    SideBar.ClipsDescendants = true
 
-    -- TEXTO DA BARRA LATERAL (CORRIGIDO PARA NÃO VAZAR)
+    -- TEXTO DA BARRA LATERAL
     local SideTitle = Instance.new("TextLabel", SideBar)
     SideTitle.Name = "SideTitle"
     SideTitle.Size = UDim2.new(1, 0, 1, 0)
@@ -210,7 +206,7 @@ local function CreateGUI()
     SideTitle.TextColor3 = Color3.fromRGB(25, 75, 160)
     SideTitle.Font = Enum.Font.Garamond
     SideTitle.TextSize = 50
-    SideTitle.TextScaled = true -- Ajusta automaticamente a escala para preencher a barra perfeitamente sem vazar
+    SideTitle.TextScaled = true
     SideTitle.Rotation = -90
 
     -- PAINEL DE CONTEÚDO PRINCIPAL (DIREITA)
@@ -289,12 +285,7 @@ local function CreateGUI()
                 Status.Text = "Discord Link Copied!"
                 Status.TextColor3 = Color3.fromRGB(88, 101, 242)
             end
-            local inviteCode = string.match(Config.DiscordURL, "discord%.gg/([%w-]+)")
-            if syn and syn.request and inviteCode then
-                syn.request({Url = "http://localhost:1111/discord?invite=" .. inviteCode, Method = "GET"})
-            end
         end)
-        
         currentYOffset = currentYOffset + 42
     end
 
@@ -323,7 +314,6 @@ local function CreateGUI()
                 Status.TextColor3 = Color3.fromRGB(225, 48, 108)
             end
         end)
-        
         currentYOffset = currentYOffset + 42
     end
     
@@ -352,7 +342,6 @@ local function CreateGUI()
                 Status.TextColor3 = Color3.fromRGB(210, 40, 40)
             end
         end)
-        
         currentYOffset = currentYOffset + 42
     end
 
@@ -438,11 +427,13 @@ local function CreateGUI()
         end
     end)
 
+    -- CORREÇÃO DA VERIFICAÇÃO DA KEY SALVA NO TXT
     if isfile and isfile(Config.KeyFileName) then
         local savedKey = readfile(Config.KeyFileName)
-        if savedKey ~= "" then
+        if savedKey and savedKey ~= "" then
             Status.Text = "Key salva encontrada, verificando..."
             task.spawn(function()
+                task.wait(0.5) -- Pequena pausa para garantir estabilidade da rede do executor
                 local success, msg = redeemKey(savedKey)
                 if success then
                     Status.Text = "Auto-login bem-sucedido!"
@@ -453,6 +444,7 @@ local function CreateGUI()
                 else
                     Status.Text = "Key salva expirada ou inválida."
                     Status.TextColor3 = Color3.fromRGB(230, 150, 40)
+                    if delfile then pcall(function() delfile(Config.KeyFileName) end) end -- Opcional: limpa key inválida
                 end
             end)
         end
