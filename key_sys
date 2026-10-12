@@ -13,10 +13,10 @@ local Config = {
     PlatoSecret       = "ec98ce7a-89d8-41a5-9e88-2031c7d97431", -- Your PlatoBoost Secret Key
 
     -- [2] Anti-Bypass / Global Secret Variable
-    Secret            = "NORTH_STAFF_CODE_)#IJ#NJikk3kd9(#l1lz", -- Global Secret Variable
+    Secret            = "NORTH_STAFF_CODE_)#IJ#NJikk3kd9(#l1lz", 
 
     -- [3] Scripts & Links
-    MainScriptURL     = "https://raw.githubusercontent.com/WorkGamersxez/Gigis_./refs/heads/main/North_.", -- The raw URL of your main script
+    MainScriptURL     = "https://raw.githubusercontent.com/WorkGamersxez/Gigis_./refs/heads/main/North_.", 
     
     -- [4] Social Media Settings
     ShowDiscord       = false,
@@ -29,16 +29,36 @@ local Config = {
     YoutubeURL        = "https://www.youtube.com/channel/UCAlXXV1Hbvf7WbfXARuVtiQ",
 
     -- [5] File System
-    KeyFileName       = "NorthKeySys.txt", -- Arquivo para guardar a key válida
+    FolderName        = "NorthSystem", -- Pasta criada no workspace
+    KeyFileName       = "NorthSystem/NorthKeySys.txt", -- Caminho completo com a pasta
 
     -- [6] GUI Management
-    OldGuiName        = "NorthSigilHubGui", -- Nome da GUI antiga para destruir
-    MainGuiName       = "NorthSigilHubGui", -- Nome da GUI principal do script
+    OldGuiName        = "NorthSigilHubGui", 
+    MainGuiName       = "NorthSigilHubGui", 
 
     -- [7] Hub Information & UI Text
     HubName           = "North_.", 
     HubDescription    = "Da pacem, Domine, in diebus nostris." 
 }
+
+-------------------------------------------------------------------------------
+--! GERENCIADOR DE PASTA E ARQUIVOS (CRIAÇÃO AUTOMÁTICA)
+-------------------------------------------------------------------------------
+local function ensureFolderAndSave(key)
+    if not writefile then return end
+    
+    -- Cria a pasta se ela não existir
+    if makefolder and isfolder then
+        if not isfolder(Config.FolderName) then
+            pcall(function() makefolder(Config.FolderName) end)
+        end
+    end
+    
+    -- Escreve o ficheiro da key
+    pcall(function()
+        writefile(Config.KeyFileName, key)
+    end)
+end
 
 -------------------------------------------------------------------------------
 --! LIBRARIES (JSON & CRYPTOGRAPHY) - DO NOT MODIFY
@@ -131,12 +151,12 @@ local function redeemKey(key)
         if decoded.success and decoded.data.valid then
             if useNonce then
                 if decoded.data.hash == lDigest("true"  .. "-" .. nonce .. "-" .. Config.PlatoSecret) then 
-                    if writefile then writefile(Config.KeyFileName, key) end
+                    ensureFolderAndSave(key) -- Guarda a key na pasta criada automaticamente
                     return true, "Success" 
                 end
                 return false, "Integrity Check Failed"
             end
-            if writefile then writefile(Config.KeyFileName, key) end
+            ensureFolderAndSave(key)
             return true, "Success"
         end
         return false, decoded.message or "Invalid Key"
@@ -428,18 +448,17 @@ local function CreateGUI()
     end)
 
     -- ========================================================================= --
-    -- VERIFICAÇÃO ROBUSTA DA KEY SALVA NO TXT (COM RETRY & SANITIZAÇÃO)
+    -- VERIFICAÇÃO COM CRIAÇÃO DE PASTA AUTOMÁTICA
     -- ========================================================================= --
     if isfile and isfile(Config.KeyFileName) then
         local savedKey = readfile(Config.KeyFileName)
         
-        -- Limpa espaços em branco e quebras de linha invisíveis
         if savedKey then
             savedKey = string.gsub(savedKey, "^%s*(.-)%s*$", "%1")
         end
 
         if savedKey and savedKey ~= "" then
-            Status.Text = "Key encontrada! Verificando conexão..."
+            Status.Text = "Key salva encontrada, a verificar..."
             Status.TextColor3 = Color3.fromRGB(110, 160, 235)
 
             task.spawn(function()
@@ -448,7 +467,7 @@ local function CreateGUI()
                 local msg = ""
 
                 for attempt = 1, maxAttempts do
-                    Status.Text = string.format("Verificando Key salva (Tentativa %d/%d)...", attempt, maxAttempts)
+                    Status.Text = string.format("A verificar Key salva (%d/%d)...", attempt, maxAttempts)
                     task.wait(1)
                     
                     success, msg = redeemKey(savedKey)
