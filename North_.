@@ -1,5 +1,5 @@
 -- ============================================================================= --
--- NORTH_. AUTO FARM - SIGIL SOUTH SIDE EDITION (HITBOX & DANO FIX - 2026)
+-- NORTH_. AUTO FARM - SIGIL SOUTH SIDE EDITION (MOBILE M1 COMBO HITBOX FIX - 2026)
 -- ============================================================================= --
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -291,8 +291,8 @@ local NPC_LIST = {
 local CONFIG = {
 	TWEEN_SPEED = 120,
 	PLAYER_BELOW = 17,
-	FLOAT_HEIGHT = 0.5,       -- Elevação ideal para alinhar o Stand com o Torso
-	DISTANCE_BEHIND = 3.2,    -- Distância ideal para o raio do soco conectar e causar dano
+	FLOAT_HEIGHT = 0.2,       -- Alinhamento de altura exato para o peito/torso
+	DISTANCE_BEHIND = 3.0,    -- Distância ideal para a hitbox de combo no YBA (Mobile)
 	Q_INTERVAL = 0.25,
 	SPAM_DELAY = 0.08,
 }
@@ -405,11 +405,11 @@ local function runItemFarmCycle()
 end
 
 -- ============================================================================= --
--- RENDERSTEPPED: CORREÇÃO DE REGISTRO DE DANO DO STAND
+-- RENDERSTEPPED: ORIENTAÇÃO DIRETA E FIXAÇÃO DE HITBOX PARA COMBO NO MOBILE
 -- ============================================================================= --
 RunService.RenderStepped:Connect(function()
 	if isRunning then
-		-- Desativa colisão apenas no Personagem (Preserva as colisões do Stand para o ataque conectar)
+		-- Desativa colisão apenas no Personagem principal
 		if player.Character then
 			for _, part in pairs(player.Character:GetChildren()) do
 				if part:IsA("BasePart") then part.CanCollide = false end
@@ -429,7 +429,7 @@ RunService.RenderStepped:Connect(function()
 			end
 		end
 
-		-- Posiciona o Stand Morph com a distância exata para o M1 registrar o impacto
+		-- Trava o Stand e força o visual/ângulo de ataque na direção do Mob
 		if targetNpcHrp and targetNpcHrp.Parent then
 			local stand = getStandMorph()
 			if stand then
@@ -439,7 +439,12 @@ RunService.RenderStepped:Connect(function()
 					or targetNpcHrp
 
 				if standRoot and npcTorso then
-					local targetCFrame = npcTorso.CFrame * CFrame.new(0, CONFIG.FLOAT_HEIGHT, CONFIG.DISTANCE_BEHIND)
+					-- Posicionamento exato atrás do NPC
+					local basePos = npcTorso.CFrame * Vector3.new(0, CONFIG.FLOAT_HEIGHT, CONFIG.DISTANCE_BEHIND)
+					
+					-- Força a orientação do Stand a OLHAR diretamente para o centro do NPC
+					local targetCFrame = CFrame.lookAt(basePos, npcTorso.Position)
+
 					pcall(function()
 						standRoot.CFrame = targetCFrame
 						stand:PivotTo(targetCFrame)
@@ -1051,4 +1056,4 @@ task.spawn(function()
 	end
 end)
 
-print("✅ North_. atualizado com sucesso! Alcance do Stand e registro de dano corrigidos.")
+print("✅ Correção da Hitbox e Orientação do Combo M1 no Mobile aplicada com sucesso!")
