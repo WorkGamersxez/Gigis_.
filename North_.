@@ -1,6 +1,5 @@
-
 -- ============================================================================= --
--- NORTH_. AUTO FARM - SIGIL SOUTH SIDE EDITION (REMOTE-BASED INTERACTION - 2026)
+-- NORTH_. AUTO FARM - SIGIL SOUTH SIDE EDITION (WITH LOBBY & GAMEMODE AUTO-PLAY - 2026)
 -- ============================================================================= --
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -16,6 +15,63 @@ local living = workspace:WaitForChild("Living")
 
 -- Configuração do Arquivo Local de Salvamento
 local SAVE_FILE_NAME = "NorthAutoFarm_SkipWarning.txt"
+
+-- ============================================================================= --
+-- FUNÇÃO: AUTO PLAY NO LOBBY & MODO DE JOGO (ENTRAR AUTOMATICAMENTE)
+-- ============================================================================= --
+local function checkAndAutoPlayLobby()
+	task.spawn(function()
+		while task.wait(0.5) do
+			local loadingScreen = playerGui:FindFirstChild("LoadingScreen")
+			if not loadingScreen then break end
+
+			local frames = loadingScreen:FindFirstChild("Frames")
+			if frames then
+				-- 1. Clique na Tela Principal do Lobby (Frames.Main.Play)
+				local mainFrame = frames:FindFirstChild("Main")
+				local mainPlayBtn = mainFrame and mainFrame:FindFirstChild("Play")
+
+				if mainPlayBtn and mainPlayBtn.Visible then
+					print("🎮 [North_.] Clicando em Play (Lobby Principal)...")
+					if firesignal then
+						pcall(function() firesignal(mainPlayBtn.MouseButton1Click) end)
+						pcall(function() firesignal(mainPlayBtn.Activated) end)
+					else
+						pcall(function()
+							local pos = mainPlayBtn.AbsolutePosition + (mainPlayBtn.AbsoluteSize / 2)
+							VirtualInputManager:SendMouseButtonEvent(pos.X, pos.Y, 0, true, game, 1)
+							task.wait(0.05)
+							VirtualInputManager:SendMouseButtonEvent(pos.X, pos.Y, 0, false, game, 1)
+						end)
+					end
+				end
+
+				-- 2. Clique no Modo de Jogo MainGame (Frames.Gamemodes.MainGame.Play)
+				local gamemodes = frames:FindFirstChild("Gamemodes")
+				local mainGame = gamemodes and gamemodes:FindFirstChild("MainGame")
+				local modePlayBtn = mainGame and mainGame:FindFirstChild("Play")
+
+				if modePlayBtn and modePlayBtn.Visible then
+					print("🎮 [North_.] Clicando em Play (Main Game)...")
+					if firesignal then
+						pcall(function() firesignal(modePlayBtn.MouseButton1Click) end)
+						pcall(function() firesignal(modePlayBtn.Activated) end)
+					else
+						pcall(function()
+							local pos = modePlayBtn.AbsolutePosition + (modePlayBtn.AbsoluteSize / 2)
+							VirtualInputManager:SendMouseButtonEvent(pos.X, pos.Y, 0, true, game, 1)
+							task.wait(0.05)
+							VirtualInputManager:SendMouseButtonEvent(pos.X, pos.Y, 0, false, game, 1)
+						end)
+					end
+				end
+			end
+		end
+	end)
+end
+
+-- Executa a verificação do lobby assim que o script é injetado
+checkAndAutoPlayLobby()
 
 -- Limpa interfaces anteriores se existirem
 if playerGui:FindFirstChild("NorthSigilHubGui") then
@@ -237,21 +293,16 @@ local function fastWait(condition, timeout)
 	return false
 end
 
--- ============================================================================= --
--- FUNÇÃO DE INTERAÇÃO VIA REMOTE (SUBSTITUI O PRESSIONAMENTO DO 'E')
--- ============================================================================= --
 local function interactViaRemote(prompt)
 	local char = player.Character
 	local remoteEvent = char and char:FindFirstChild("RemoteEvent")
 	
-	-- 1. Tenta disparar a interação via RemoteEvent do jogador
 	if remoteEvent then
 		pcall(function()
 			remoteEvent:FireServer("Interact", prompt)
 		end)
 	end
 
-	-- 2. Fallback via fireproximityprompt / InputHold
 	if prompt then
 		prompt.RequiresLineOfSight = false
 		prompt.HoldDuration = 0
@@ -259,9 +310,6 @@ local function interactViaRemote(prompt)
 	end
 end
 
--- ============================================================================= --
--- LÓGICA DO AUTO FARM DE ITENS VIA REMOTE
--- ============================================================================= --
 local function isItemSelected(itemName)
 	local count = 0
 	for _ in pairs(selectedItems) do count = count + 1 end
@@ -296,7 +344,6 @@ local function runItemFarmCycle()
 					playerHrp.CFrame = targetPart.CFrame * CFrame.new(0, 2, 0)
 					task.wait(0.2)
 
-					-- Dispara a interação via RemoteEvent em vez do E físico
 					interactViaRemote(prompt)
 					
 					task.wait(0.4)
@@ -306,9 +353,6 @@ local function runItemFarmCycle()
 	end
 end
 
--- ============================================================================= --
--- MOTOR DE COMBATE E RENDERIZAÇÃO
--- ============================================================================= --
 RunService.RenderStepped:Connect(function()
 	if isRunning then
 		if player.Character then
@@ -526,7 +570,6 @@ local function triggerPrompt()
 	local prompt = npc and npc:FindFirstChildOfClass("ProximityPrompt")
 	if not prompt then return false end
 
-	-- Aciona o Prompt diretamente pelo Remote / FireProximityPrompt
 	interactViaRemote(prompt)
 	task.wait(0.4)
 	return true
@@ -928,4 +971,4 @@ task.spawn(function()
 	end
 end)
 
-print("✅ Interações via RemoteEvent para o 'E' configuradas com sucesso!")
+print("✅ North_. carregado com sucesso (Suporte a Main Game Auto-Play ativo)!")
